@@ -1,0 +1,12 @@
+.env
+Prompts/
+bin/
+*.test
+*.out
+__pycache__/
+.venv/
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.DS_Store

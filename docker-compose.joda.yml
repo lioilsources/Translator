@@ -1,0 +1,16 @@
+# Orchestrátor na JODĚ. Hodnoty dodává .env (viz .env.example).
+services:
+  translator:
+    build: ./server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8096:8096"
+    environment:
+      TRANSLATOR_TOKEN: ${TRANSLATOR_TOKEN:?}
+      ASR_URL: ${ASR_URL:?}
+      MT_URL: ${MT_URL:?}
+      MT_API_KEY: ${MT_API_KEY:-}
+      MT_MODEL: ${MT_MODEL:-bench-qwen36}
+      TTS_URL: ${TTS_URL:?}
+      TTS_API_KEY: ${TTS_API_KEY:-}
+    mem_limit: 128m

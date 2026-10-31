@@ -1,0 +1,13 @@
+# ASR worker. Spouští ho výhradně broker, nikdy ručně (viz README).
+services:
+  asr:
+    build: ./workers/asr
+    ports:
+      - "8110:8110"
+    environment:
+      ASR_MODEL: ${ASR_MODEL:-faster-whisper-large-v3-turbo}
+      ASR_COMPUTE: ${ASR_COMPUTE:-int8}
+      ASR_THREADS: ${ASR_THREADS:-8}
+      EMBED_ENABLED: ${EMBED_ENABLED:-1}
+    volumes:
+      - ${HOME}/deploy/Translator/models:/models:ro
