@@ -83,6 +83,11 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 	httpc := &http.Client{}
+	ttsURL := env("TTS_URL", "http://localhost:8093")
+	var tts backend.TTS = &backend.TTSClient{BaseURL: ttsURL, APIKey: os.Getenv("TTS_API_KEY"), HTTP: httpc}
+	if os.Getenv("TTS_MODE") == "direct" {
+		tts = &backend.DirectTTSClient{BaseURL: ttsURL, HTTP: httpc}
+	}
 	h := &ws.Handler{
 		Token: token, MaxSessions: int32(maxSessions), IdleTimeout: 30 * time.Minute, Logger: logger,
 		Deps: session.Deps{
@@ -91,7 +96,7 @@ func run(logger *slog.Logger) error {
 				BaseURL: env("MT_URL", "http://localhost:8080"), APIKey: os.Getenv("MT_API_KEY"),
 				Model: env("MT_MODEL", "bench-qwen36"), HTTP: httpc,
 			},
-			TTS:           &backend.TTSClient{BaseURL: env("TTS_URL", "http://localhost:8093"), APIKey: os.Getenv("TTS_API_KEY"), HTTP: httpc},
+			TTS:           tts,
 			Limits:        session.NewLimits(asrSlots, mtSlots, ttsSlots),
 			DefaultVoices: defaultVoices,
 			ASRTimeout:    15 * time.Second, MTTimeout: 20 * time.Second, TTSTimeout: 20 * time.Second,

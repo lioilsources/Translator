@@ -34,6 +34,27 @@ ASR worker, LLM i TTS běží jen přes broker. `tts` je v profilech `llm` a `co
 sparkctl exec translator qwen36,tts 30 15 "translator test" -- <příkaz>
 ```
 
+## Provoz na L40S
+
+Celý stack běží jako vlastní Compose projekt, nezávislý na profilech `switch.sh`:
+
+```bash
+deploy/l40s/up.sh    # stáhne ASR a ECAPA, vytvoří token, spustí vše
+```
+
+| služba | model | poznámka |
+|---|---|---|
+| `llm` | Qwen3-30B-A3B FP8 | 30 GB vah, podíl GPU 0,76 |
+| `asr` | whisper-large-v3-turbo + ECAPA | ~2,3 GB VRAM |
+| `tts` | Piper (cs), Kokoro (ostatní) | CPU, vlastní instance, `TTS_MODE=direct` |
+| `orchestrator` | | jen `127.0.0.1:8096` |
+
+Stack drží ~36 GB VRAM. Qwen3-32B se na podíl 0,55 nevejde a v restart smyčce sebral VRAM běžící úloze v ComfyUI, proto model nikdy neměnit bez kontroly `nvidia-smi`. UC12 vyžaduje 40 GB volné VRAM, takže vedle Translatora nenaběhne.
+
+Test: `workers/spike/e2e.py` posílá řeč přes reálný WebSocket.
+
+Veřejná adresa `tlumocnik.ol1n.com` vede přes Cloudflare Tunnel (`--profile tunnel`, public hostname míří na `http://orchestrator:8096`). Tunnel je jen odchozí spojení, takže přesun na jiný stroj znamená spustit tam stack se stejným `TUNNEL_TOKEN`, doména ani appka se nemění.
+
 ## Odchylky od plánu
 
 | plán | skutečnost | důvod |

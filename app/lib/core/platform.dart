@@ -14,7 +14,7 @@ import 'package:web_socket_channel/io.dart';
 
 const _defaultUrl = String.fromEnvironment(
   'TRANSLATOR_URL',
-  defaultValue: 'wss://translator.ol1n.com/v1/ws',
+  defaultValue: 'wss://tlumocnik.ol1n.com/v1/ws',
 );
 const _defaultToken = String.fromEnvironment('TRANSLATOR_TOKEN');
 
