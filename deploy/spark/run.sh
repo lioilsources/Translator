@@ -13,8 +13,8 @@ EMBED_ENABLED=1 EMBED_MODEL="$PWD/models/speaker/ecapa-voxceleb" \
   .venv/bin/uvicorn --app-dir workers/asr app:app --host 127.0.0.1 --port 8110 &
 
 ASR_URL=http://127.0.0.1:8110 MT_URL=http://127.0.0.1:8080 MT_MODEL=bench-qwen36 \
-TTS_URL=http://127.0.0.1:8093 TRANSLATOR_ADDR=127.0.0.1:8096 \
+TTS_URL=http://127.0.0.1:8093 TRANSLATOR_ADDR=127.0.0.1:8094 \
   bin/translator &
 
-cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8096 run &
+cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8094 run &
 wait -n
