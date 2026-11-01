@@ -3,11 +3,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"translator/server/internal/backend"
+	"translator/server/internal/health"
 	"translator/server/internal/session"
 	"translator/server/internal/ws"
 )
@@ -33,6 +35,9 @@ var defaultVoices = map[string]string{
 	"zh": "kokoro:zf_xiaobei",
 	"hi": "kokoro:hf_alpha",
 }
+
+// maxRecording is a little over 60 s of 16 kHz PCM16.
+const maxRecording = 2 << 20
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -59,6 +64,36 @@ func envInt(key string, fallback int) (int, error) {
 		return 0, fmt.Errorf("%s must be a positive integer", key)
 	}
 	return n, nil
+}
+
+func healthProbes(ttsURL, voiceURL string) []health.Probe {
+	probes := []health.Probe{
+		{Name: "asr", URL: env("ASR_URL", "http://localhost:8110") + "/health", Required: true},
+		{Name: "mt", URL: env("MT_URL", "http://localhost:8080") + "/v1/models", Bearer: os.Getenv("MT_API_KEY"), Required: true},
+		{Name: "tts", URL: ttsURL + "/health", Required: true},
+	}
+	if voiceURL != "" {
+		probes = append(probes, health.Probe{Name: "voice", URL: voiceURL + "/health"})
+	}
+	return probes
+}
+
+// voiceLibrary forwards the library API, behind the token, to the voice worker.
+// /v1/synthesize stays private because only /v1/voices is routed.
+func voiceLibrary(target string, h *ws.Handler) (http.Handler, error) {
+	u, err := url.Parse(target)
+	if err != nil {
+		return nil, fmt.Errorf("VOICE_URL: %w", err)
+	}
+	proxy := httputil.NewSingleHostReverseProxy(u)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !h.Authorized(r) {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, maxRecording)
+		proxy.ServeHTTP(w, r)
+	}), nil
 }
 
 func run(logger *slog.Logger) error {
@@ -88,6 +123,10 @@ func run(logger *slog.Logger) error {
 	if os.Getenv("TTS_MODE") == "direct" {
 		tts = &backend.DirectTTSClient{BaseURL: ttsURL, HTTP: httpc}
 	}
+	voiceURL := os.Getenv("VOICE_URL")
+	if voiceURL != "" {
+		tts = &backend.CloneTTS{BaseURL: voiceURL, HTTP: httpc, Next: tts, Default: defaultVoices, Logger: logger}
+	}
 	h := &ws.Handler{
 		Token: token, MaxSessions: int32(maxSessions), IdleTimeout: 30 * time.Minute, Logger: logger,
 		Deps: session.Deps{
@@ -105,9 +144,16 @@ func run(logger *slog.Logger) error {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("GET /v1/ws", h)
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok", "sessions": h.Active()})
+	if voiceURL != "" {
+		library, err := voiceLibrary(voiceURL, h)
+		if err != nil {
+			return err
+		}
+		mux.Handle("/v1/voices", library)
+		mux.Handle("/v1/voices/", library)
+	}
+	mux.Handle("GET /healthz", &health.Checker{
+		HTTP: httpc, Sessions: h.Active, Probes: healthProbes(ttsURL, voiceURL),
 	})
 
 	srv := &http.Server{Addr: env("TRANSLATOR_ADDR", ":8096"), Handler: mux, ReadHeaderTimeout: 10 * time.Second}

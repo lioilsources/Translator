@@ -125,4 +125,67 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get errorGeneric => 'Něco se pokazilo';
+
+  @override
+  String get cancel => 'Zrušit';
+
+  @override
+  String get voiceLibrary => 'Moje hlasy';
+
+  @override
+  String get voiceAdd => 'Nahrát hlas';
+
+  @override
+  String get voiceEmpty => 'Zatím tu není žádný hlas.';
+
+  @override
+  String get voiceServerError => 'Hlasy teď nejsou dostupné';
+
+  @override
+  String get voiceDefault => 'Výchozí hlas';
+
+  @override
+  String get voiceName => 'Pojmenujte hlas';
+
+  @override
+  String get voiceConsent =>
+      'Souhlasím s uložením nahrávky mého hlasu na serveru a s jejím použitím k překladu mým hlasem. Je to biometrický údaj, nahrávat smím jen sebe a souhlas zruším smazáním hlasu.';
+
+  @override
+  String get voiceReadThis => 'Stiskněte tlačítko a 30 sekund přirozeně čtěte:';
+
+  @override
+  String get voiceSampleText =>
+      'Dobrý den, tohle je ukázka mého hlasu. Mluvím klidně a přirozeně, tak jako bych si s někým povídal u stolu. Včera jsem šel na procházku, cestou jsem potkal starého kamaráda a dali jsme si spolu kávu. Vyprávěl mi o své cestě k moři, o počasí, o dobrém jídle i o tom, co ho čeká v práci. Až to dočtu, klidně budu pokračovat vlastními slovy, dokud neskončí nahrávání.';
+
+  @override
+  String get voiceRecord => 'Nahrát 30 sekund';
+
+  @override
+  String voiceRecording(int seconds) {
+    return 'Nahrávám, zbývá $seconds s';
+  }
+
+  @override
+  String voiceDeleteTitle(String name) {
+    return 'Smazat hlas $name?';
+  }
+
+  @override
+  String get voiceDeleteBody => 'Nahrávka se trvale smaže ze serveru.';
+
+  @override
+  String get serverChecking => 'ověřuji…';
+
+  @override
+  String get serverReady => 'připraveno';
+
+  @override
+  String get serverDegraded => 'neběží vše';
+
+  @override
+  String get serverOffline => 'nedostupné';
+
+  @override
+  String get serverRecheck => 'Znovu ověřit';
 }

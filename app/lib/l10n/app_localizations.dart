@@ -331,6 +331,120 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Něco se pokazilo'**
   String get errorGeneric;
+
+  /// No description provided for @cancel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zrušit'**
+  String get cancel;
+
+  /// No description provided for @voiceLibrary.
+  ///
+  /// In cs, this message translates to:
+  /// **'Moje hlasy'**
+  String get voiceLibrary;
+
+  /// No description provided for @voiceAdd.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahrát hlas'**
+  String get voiceAdd;
+
+  /// No description provided for @voiceEmpty.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zatím tu není žádný hlas.'**
+  String get voiceEmpty;
+
+  /// No description provided for @voiceServerError.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hlasy teď nejsou dostupné'**
+  String get voiceServerError;
+
+  /// No description provided for @voiceDefault.
+  ///
+  /// In cs, this message translates to:
+  /// **'Výchozí hlas'**
+  String get voiceDefault;
+
+  /// No description provided for @voiceName.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pojmenujte hlas'**
+  String get voiceName;
+
+  /// No description provided for @voiceConsent.
+  ///
+  /// In cs, this message translates to:
+  /// **'Souhlasím s uložením nahrávky mého hlasu na serveru a s jejím použitím k překladu mým hlasem. Je to biometrický údaj, nahrávat smím jen sebe a souhlas zruším smazáním hlasu.'**
+  String get voiceConsent;
+
+  /// No description provided for @voiceReadThis.
+  ///
+  /// In cs, this message translates to:
+  /// **'Stiskněte tlačítko a 30 sekund přirozeně čtěte:'**
+  String get voiceReadThis;
+
+  /// No description provided for @voiceSampleText.
+  ///
+  /// In cs, this message translates to:
+  /// **'Dobrý den, tohle je ukázka mého hlasu. Mluvím klidně a přirozeně, tak jako bych si s někým povídal u stolu. Včera jsem šel na procházku, cestou jsem potkal starého kamaráda a dali jsme si spolu kávu. Vyprávěl mi o své cestě k moři, o počasí, o dobrém jídle i o tom, co ho čeká v práci. Až to dočtu, klidně budu pokračovat vlastními slovy, dokud neskončí nahrávání.'**
+  String get voiceSampleText;
+
+  /// No description provided for @voiceRecord.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahrát 30 sekund'**
+  String get voiceRecord;
+
+  /// No description provided for @voiceRecording.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahrávám, zbývá {seconds} s'**
+  String voiceRecording(int seconds);
+
+  /// No description provided for @voiceDeleteTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Smazat hlas {name}?'**
+  String voiceDeleteTitle(String name);
+
+  /// No description provided for @voiceDeleteBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahrávka se trvale smaže ze serveru.'**
+  String get voiceDeleteBody;
+
+  /// No description provided for @serverChecking.
+  ///
+  /// In cs, this message translates to:
+  /// **'ověřuji…'**
+  String get serverChecking;
+
+  /// No description provided for @serverReady.
+  ///
+  /// In cs, this message translates to:
+  /// **'připraveno'**
+  String get serverReady;
+
+  /// No description provided for @serverDegraded.
+  ///
+  /// In cs, this message translates to:
+  /// **'neběží vše'**
+  String get serverDegraded;
+
+  /// No description provided for @serverOffline.
+  ///
+  /// In cs, this message translates to:
+  /// **'nedostupné'**
+  String get serverOffline;
+
+  /// No description provided for @serverRecheck.
+  ///
+  /// In cs, this message translates to:
+  /// **'Znovu ověřit'**
+  String get serverRecheck;
 }
 
 class _AppLocalizationsDelegate

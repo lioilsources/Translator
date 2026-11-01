@@ -33,6 +33,18 @@ Pořadí pro jednu promluvu: `asr.final`, `mt.partial`*, `mt.final`, (`tts.start
 
 Chybové kódy: `bad_request`, `no_session`, `too_long`, `busy`, `queue_full`, `asr_unavailable`, `mt_unavailable`, `tts_unavailable`. Při `tts_unavailable` zůstává překlad na obrazovce.
 
+## Knihovna hlasů
+
+REST vedle WebSocketu se stejným tokenem, jen když server běží s `VOICE_URL`. Hlas patří zařízení (`device` je `deviceId`).
+
+| volání | význam |
+|---|---|
+| `POST /v1/voices?device=&name=&consent=true` | tělo PCM16LE, 16 kHz, mono, 10–60 s; bez `consent=true` vrací 422; nejvýš 5 hlasů |
+| `GET /v1/voices?device=` | seznam `{id, name, seconds, consentAt}` |
+| `DELETE /v1/voices/{id}?device=` | fyzicky smaže nahrávku |
+
+`voiceA` a `voiceB` v `session.start` nesou `clone:<id>` pro hlas toho, kdo mluví. Když klon selže, zazní výchozí hlas jazyka.
+
 ## Rozhodnutí o mluvčím
 
 1. `speaker.force` nebo `side` z push-to-talk vždy vítězí.

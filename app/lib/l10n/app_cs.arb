@@ -38,5 +38,38 @@
   "errorVoice": "Hlas není dostupný, zůstává text",
   "errorBusy": "Server je plný, zkuste to za chvíli",
   "errorTooLong": "Promluva je moc dlouhá",
-  "errorGeneric": "Něco se pokazilo"
+  "errorGeneric": "Něco se pokazilo",
+  "cancel": "Zrušit",
+  "voiceLibrary": "Moje hlasy",
+  "voiceAdd": "Nahrát hlas",
+  "voiceEmpty": "Zatím tu není žádný hlas.",
+  "voiceServerError": "Hlasy teď nejsou dostupné",
+  "voiceDefault": "Výchozí hlas",
+  "voiceName": "Pojmenujte hlas",
+  "voiceConsent": "Souhlasím s uložením nahrávky mého hlasu na serveru a s jejím použitím k překladu mým hlasem. Je to biometrický údaj, nahrávat smím jen sebe a souhlas zruším smazáním hlasu.",
+  "voiceReadThis": "Stiskněte tlačítko a 30 sekund přirozeně čtěte:",
+  "voiceSampleText": "Dobrý den, tohle je ukázka mého hlasu. Mluvím klidně a přirozeně, tak jako bych si s někým povídal u stolu. Včera jsem šel na procházku, cestou jsem potkal starého kamaráda a dali jsme si spolu kávu. Vyprávěl mi o své cestě k moři, o počasí, o dobrém jídle i o tom, co ho čeká v práci. Až to dočtu, klidně budu pokračovat vlastními slovy, dokud neskončí nahrávání.",
+  "voiceRecord": "Nahrát 30 sekund",
+  "voiceRecording": "Nahrávám, zbývá {seconds} s",
+  "voiceDeleteTitle": "Smazat hlas {name}?",
+  "voiceDeleteBody": "Nahrávka se trvale smaže ze serveru.",
+  "@voiceRecording": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@voiceDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serverChecking": "ověřuji…",
+  "serverReady": "připraveno",
+  "serverDegraded": "neběží vše",
+  "serverOffline": "nedostupné",
+  "serverRecheck": "Znovu ověřit"
 }

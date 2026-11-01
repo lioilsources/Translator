@@ -6,6 +6,7 @@ import 'package:translator_app/core/platform.dart';
 import 'package:translator_app/l10n/app_localizations.dart';
 import 'package:translator_app/ui/conversation_view.dart';
 import 'package:translator_app/ui/languages.dart';
+import 'package:translator_app/ui/voices.dart';
 import 'package:translator_core/translator_core.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -20,6 +21,32 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   Settings get s => widget.settings;
+  List<Voice> _voices = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadVoices());
+  }
+
+  /// A server without cloning, or no connection, simply offers no voices.
+  Future<void> _loadVoices() async {
+    try {
+      final voices = await VoiceLibrary(s).list();
+      if (mounted) setState(() => _voices = voices);
+    } on Exception {
+      if (mounted) setState(() => _voices = const []);
+    }
+  }
+
+  Future<void> _openLibrary() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => VoiceLibraryScreen(settings: s),
+      ),
+    );
+    await _loadVoices();
+  }
 
   Future<void> _pick({required bool isA}) async {
     final recent = s.recentLangs.map(languageOf).toList();
@@ -84,6 +111,11 @@ class _SetupScreenState extends State<SetupScreen> {
             ),
           ),
           IconButton(
+            tooltip: l.voiceLibrary,
+            icon: const Icon(Icons.record_voice_over),
+            onPressed: _openLibrary,
+          ),
+          IconButton(
             tooltip: l.settings,
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.of(context).push(
@@ -104,12 +136,24 @@ class _SetupScreenState extends State<SetupScreen> {
               language: languageOf(s.langA),
               onTap: () => _pick(isA: true),
             ),
+            if (_voices.isNotEmpty)
+              VoicePicker(
+                voices: _voices,
+                selected: s.voiceA,
+                onChanged: (v) => setState(() => s.voiceA = v),
+              ),
             const SizedBox(height: 12),
             _LangCard(
               label: l.colleague,
               language: languageOf(s.langB),
               onTap: () => _pick(isA: false),
             ),
+            if (_voices.isNotEmpty)
+              VoicePicker(
+                voices: _voices,
+                selected: s.voiceB,
+                onChanged: (v) => setState(() => s.voiceB = v),
+              ),
             const SizedBox(height: 24),
             SegmentedButton<Mode>(
               segments: [
@@ -200,7 +244,13 @@ class _LiveConversationScreenState extends State<LiveConversationScreen> {
         if (mounted) setState(() {});
       },
     );
-    _c.start(deviceId: s.deviceId, langA: s.langA, langB: s.langB);
+    _c.start(
+      deviceId: s.deviceId,
+      langA: s.langA,
+      langB: s.langB,
+      voiceA: s.voiceA,
+      voiceB: s.voiceB,
+    );
     unawaited(WakelockPlus.enable());
     unawaited(widget.mic.start(_c.onMicFrame));
   }
@@ -295,6 +345,35 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late final _url = TextEditingController(text: widget.settings.url);
   late final _token = TextEditingController(text: widget.settings.token);
+  final _health = <String, ServerHealth>{};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_checkServers());
+  }
+
+  Future<void> _checkServers() async {
+    setState(() {
+      for (final url in servers.values) {
+        _health[url] = ServerHealth.checking;
+      }
+    });
+    await Future.wait(
+      servers.values.map((url) async {
+        final result = await checkServer(url);
+        if (mounted) setState(() => _health[url] = result);
+      }),
+    );
+  }
+
+  String _healthLabel(AppLocalizations l, ServerHealth? health) =>
+      switch (health ?? ServerHealth.checking) {
+        ServerHealth.checking => l.serverChecking,
+        ServerHealth.ready => l.serverReady,
+        ServerHealth.degraded => l.serverDegraded,
+        ServerHealth.offline => l.serverOffline,
+      };
 
   @override
   void dispose() {
@@ -312,8 +391,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            SegmentedButton<String>(
+              emptySelectionAllowed: true,
+              segments: [
+                for (final server in servers.entries)
+                  ButtonSegment(
+                    value: server.value,
+                    // Only a ready backend can be chosen; the current one stays.
+                    enabled:
+                        _health[server.value] == ServerHealth.ready ||
+                        _url.text == server.value,
+                    label: Text(
+                      '${server.key}\n${_healthLabel(l, _health[server.value])}',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
+              selected: {if (servers.containsValue(_url.text)) _url.text},
+              onSelectionChanged: (v) {
+                if (v.isNotEmpty) setState(() => _url.text = v.first);
+              },
+            ),
+            TextButton.icon(
+              onPressed: _checkServers,
+              icon: const Icon(Icons.refresh),
+              label: Text(l.serverRecheck),
+            ),
             TextField(
               controller: _url,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(labelText: l.serverUrl),
             ),
             TextField(
@@ -325,7 +431,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             FilledButton(
               onPressed: () {
                 widget.settings
-                  ..url = _url.text.trim()
+                  ..useServer(_url.text.trim())
                   ..token = _token.text.trim();
                 Navigator.pop(context);
               },

@@ -40,7 +40,8 @@ type Handler struct {
 // Active returns the number of open connections.
 func (h *Handler) Active() int32 { return h.active.Load() }
 
-func (h *Handler) authorized(r *http.Request) bool {
+// Authorized reports whether the request carries the shared token.
+func (h *Handler) Authorized(r *http.Request) bool {
 	if h.Token == "" {
 		return true
 	}
@@ -50,7 +51,7 @@ func (h *Handler) authorized(r *http.Request) bool {
 
 // ServeHTTP implements http.Handler.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !h.authorized(r) {
+	if !h.Authorized(r) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}

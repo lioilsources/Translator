@@ -24,6 +24,8 @@ abstract final class ClientMessage {
     required String langB,
     required Mode mode,
     required bool tts,
+    String? voiceA,
+    String? voiceB,
   }) => jsonEncode({
     'type': 'session.start',
     'deviceId': deviceId,
@@ -31,6 +33,8 @@ abstract final class ClientMessage {
     'langB': langB,
     'mode': mode.name,
     'tts': tts,
+    'voiceA': ?voiceA,
+    'voiceB': ?voiceB,
   });
 
   static String audioEnd({Side? side}) => jsonEncode({

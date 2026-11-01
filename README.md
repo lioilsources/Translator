@@ -51,6 +51,8 @@ deploy/l40s/up.sh    # stáhne ASR a ECAPA, vytvoří token, spustí vše
 
 Stack drží ~36 GB VRAM. Qwen3-32B se na podíl 0,55 nevejde a v restart smyčce sebral VRAM běžící úloze v ComfyUI, proto model nikdy neměnit bez kontroly `nvidia-smi`. UC12 vyžaduje 40 GB volné VRAM, takže vedle Translatora nenaběhne.
 
+Klonování hlasu je volitelná služba `voice` (`--profile clone`) nad XTTS-v2. Bez `VOICE_URL` je vypnuté a appka výběr hlasu neukáže. Licence XTTS (CPML) je nekomerční, viz Odchylky.
+
 Test: `workers/spike/e2e.py` posílá řeč přes reálný WebSocket.
 
 Veřejná adresa `tlumocnik.ol1n.com` vede přes Cloudflare Tunnel (`--profile tunnel`, public hostname míří na `http://orchestrator:8096`). Tunnel je jen odchozí spojení, takže přesun na jiný stroj znamená spustit tam stack se stejným `TUNNEL_TOKEN`, doména ani appka se nemění.
@@ -64,6 +66,7 @@ Veřejná adresa `tlumocnik.ol1n.com` vede přes Cloudflare Tunnel (`--profile t
 | Postgres + sqlc | server bez databáze | bez účtů a billingu není co ukládat; přijde s fází 4 |
 | `tts.chunk` | `tts.start` + binární rámec s celou větou | klient přehrává celé klipy ze souborů |
 | doplněno | `session.ready`, `mt.partial`, `utterance.end`, `audio.cancel`, `session.config` | klient potřebuje jednoznačný konec promluvy a vypínání zvuku |
+| klon hlasu až s billingem (fáze 4) | knihovna hlasů bez plateb | XTTS-v2 je jediný dostupný model s cs a mezijazykovým klonem, ale licence CPML je nekomerční: do placeného provozu ho musí nahradit komerčně čistý model, rozhraní `Engine` ve `workers/voice` to dovoluje |
 | Silero VAD | energetický VAD s adaptivním prahem | plán ho pro v1 připouští |
 
 ## Naměřeno 31. 10. 2026 (SPARK)

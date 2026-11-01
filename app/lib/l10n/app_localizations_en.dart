@@ -125,4 +125,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorGeneric => 'Something went wrong';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get voiceLibrary => 'My voices';
+
+  @override
+  String get voiceAdd => 'Record a voice';
+
+  @override
+  String get voiceEmpty => 'No voices yet.';
+
+  @override
+  String get voiceServerError => 'Voices are not available right now';
+
+  @override
+  String get voiceDefault => 'Default voice';
+
+  @override
+  String get voiceName => 'Name this voice';
+
+  @override
+  String get voiceConsent =>
+      'I agree to my voice recording being stored on the server and used to speak translations in my voice. It is biometric data, I may only record myself, and deleting the voice withdraws my consent.';
+
+  @override
+  String get voiceReadThis =>
+      'Press the button and read naturally for 30 seconds:';
+
+  @override
+  String get voiceSampleText =>
+      'Hello, this is a sample of my voice. I am speaking calmly and naturally, as if I were chatting with someone at a table. Yesterday I went for a walk, ran into an old friend, and we had a coffee together. He told me about his trip to the seaside, the weather, the good food, and what is waiting for him at work. When I finish reading, I will simply carry on in my own words until the recording ends.';
+
+  @override
+  String get voiceRecord => 'Record 30 seconds';
+
+  @override
+  String voiceRecording(int seconds) {
+    return 'Recording, $seconds s left';
+  }
+
+  @override
+  String voiceDeleteTitle(String name) {
+    return 'Delete the voice $name?';
+  }
+
+  @override
+  String get voiceDeleteBody =>
+      'The recording is permanently removed from the server.';
+
+  @override
+  String get serverChecking => 'checking…';
+
+  @override
+  String get serverReady => 'ready';
+
+  @override
+  String get serverDegraded => 'partly down';
+
+  @override
+  String get serverOffline => 'offline';
+
+  @override
+  String get serverRecheck => 'Check again';
 }

@@ -11,6 +11,7 @@ cd workers/asr && ASR_BACKEND=fake pytest
 
 ## Mapa
 - `server/`: Go orchestrátor (WS, session, klienti modelů).
+- `workers/voice/`: knihovna hlasů a klonování (XTTS-v2).
 - `workers/asr/`: FastAPI + Whisper. `workers/spike/`: měření fáze 0.
 - `app/`: Flutter, `app/packages/translator_core`: čistý Dart (protokol, VAD, stav, řadič).
 - `docs/protocol.md`: WS protokol. `scripts/download_models.sh`: modely na SPARK.
@@ -21,7 +22,8 @@ cd workers/asr && ASR_BACKEND=fake pytest
 - `utterance.end` je vždy poslední zpráva promluvy; klient na ní závisí.
 - Rámce jedné promluvy se nesmí proložit, proto vše běží přes frontu session.
 - Audio ani texty hovorů se na serveru neukládají ani nelogují.
-- TTS jen s komerčně čistou licencí (`commercial_only`).
+- TTS jen s komerčně čistou licencí (`commercial_only`). Výjimka: klon hlasu přes XTTS-v2 je nekomerční a do placeného provozu nesmí.
+- Hlas se ukládá jen se souhlasem a smazání ho fyzicky odstraní. Je to biometrický údaj.
 
 ## Odchylky
 Odchylka od plánu: viz „Odchylky od plánu“ v README.

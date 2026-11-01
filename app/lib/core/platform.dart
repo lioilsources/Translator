@@ -16,6 +16,13 @@ const _defaultUrl = String.fromEnvironment(
   'TRANSLATOR_URL',
   defaultValue: 'wss://tlumocnik.ol1n.com/v1/ws',
 );
+
+/// Backends offered in settings; both accept the same token.
+const servers = {
+  'L40S': 'wss://tlumocnik.ol1n.com/v1/ws',
+  'SPARK': 'wss://tlumocnik-spark.ol1n.com/v1/ws',
+};
+
 const _defaultToken = String.fromEnvironment('TRANSLATOR_TOKEN');
 
 /// WebSocket transport; binary frames arrive as Uint8List.
@@ -125,6 +132,30 @@ class Settings {
   Mode get mode => Mode.values.asNameMap()[_prefs.getString('mode')] ?? Mode.auto;
   set mode(Mode v) => _prefs.setString('mode', v.name);
 
+  /// Wire names of the chosen voices, null for the language's default.
+  String? get voiceA => _prefs.getString('voiceA');
+  set voiceA(String? v) => _setVoice('voiceA', v);
+
+  String? get voiceB => _prefs.getString('voiceB');
+  set voiceB(String? v) => _setVoice('voiceB', v);
+
+  /// Switches backend. Voice libraries live per server, so choices are reset.
+  void useServer(String wsUrl) {
+    if (wsUrl == url) return;
+    url = wsUrl;
+    voiceA = null;
+    voiceB = null;
+  }
+
+  void _setVoice(String key, String? v) =>
+      v == null ? _prefs.remove(key) : _prefs.setString(key, v);
+
+  void forgetVoice(String id) {
+    final wire = Voice.wirePrefix + id;
+    if (voiceA == wire) voiceA = null;
+    if (voiceB == wire) voiceB = null;
+  }
+
   List<String> get recentLangs => _prefs.getStringList('recent') ?? const [];
   void noteLang(String lang) => _prefs.setStringList('recent', [
     lang,
@@ -138,6 +169,111 @@ class Settings {
     _prefs.setString('deviceId', fresh);
     return fresh;
   }
+}
+
+/// Whether a backend can take a conversation right now.
+enum ServerHealth { checking, ready, degraded, offline }
+
+ServerHealth parseHealth(int status, String body) {
+  if (status != 200) return ServerHealth.offline;
+  try {
+    final json = jsonDecode(body) as Map<String, dynamic>;
+    return json['status'] == 'ready'
+        ? ServerHealth.ready
+        : ServerHealth.degraded;
+  } on FormatException {
+    return ServerHealth.offline;
+  }
+}
+
+/// Asks a backend's /healthz, which also probes its speech and LLM services.
+Future<ServerHealth> checkServer(String wsUrl) async {
+  final ws = Uri.parse(wsUrl);
+  final uri = ws.replace(
+    scheme: ws.scheme == 'ws' ? 'http' : 'https',
+    path: '/healthz',
+  );
+  final http = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+  try {
+    final request = await http.getUrl(uri);
+    final response = await request.close().timeout(const Duration(seconds: 5));
+    final body = await response.transform(utf8.decoder).join();
+    return parseHealth(response.statusCode, body);
+  } on Exception {
+    return ServerHealth.offline;
+  } finally {
+    http.close(force: true);
+  }
+}
+
+/// One recorded voice from the user's library on the server.
+class Voice {
+  const Voice({required this.id, required this.name});
+
+  factory Voice.fromJson(Map<String, dynamic> json) =>
+      Voice(id: json['id'] as String, name: json['name'] as String);
+
+  static const wirePrefix = 'clone:';
+
+  final String id;
+  final String name;
+
+  String get wireName => wirePrefix + id;
+}
+
+/// The voice library over HTTP. The base URL follows the conversation URL.
+class VoiceLibrary {
+  VoiceLibrary(this._settings);
+
+  final Settings _settings;
+  final _http = HttpClient();
+
+  Uri _uri(String path, [Map<String, String> query = const {}]) {
+    final ws = Uri.parse(_settings.url);
+    return ws.replace(
+      scheme: ws.scheme == 'ws' ? 'http' : 'https',
+      path: '/v1/voices$path',
+      queryParameters: {'device': _settings.deviceId, ...query},
+    );
+  }
+
+  Future<String> _send(
+    String method,
+    Uri uri, {
+    Uint8List? body,
+    required int expect,
+  }) async {
+    final request = await _http.openUrl(method, uri);
+    request.headers.set('Authorization', 'Bearer ${_settings.token}');
+    if (body != null) {
+      request.headers.contentType = ContentType.binary;
+      request.contentLength = body.length;
+      request.add(body);
+    }
+    final response = await request.close();
+    final text = await response.transform(utf8.decoder).join();
+    if (response.statusCode != expect) {
+      throw HttpException('voices: status ${response.statusCode}', uri: uri);
+    }
+    return text;
+  }
+
+  Future<List<Voice>> list() async {
+    final text = await _send('GET', _uri(''), expect: 200);
+    return [
+      for (final item in jsonDecode(text) as List<dynamic>)
+        Voice.fromJson(item as Map<String, dynamic>),
+    ];
+  }
+
+  Future<void> create(String name, Uint8List pcm) => _send(
+    'POST',
+    _uri('', {'name': name, 'consent': 'true'}),
+    body: pcm,
+    expect: 201,
+  );
+
+  Future<void> delete(String id) => _send('DELETE', _uri('/$id'), expect: 204);
 }
 
 /// History as one JSON file per conversation, on the device only.

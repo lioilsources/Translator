@@ -54,7 +54,26 @@ services:
       MT_MODEL: translator-mt
       TTS_URL: http://tts:8003
       TTS_MODE: direct
+      VOICE_URL: ${VOICE_URL:-}
     mem_limit: 128m
+
+  # Klonování hlasu. XTTS-v2 má nekomerční licenci CPML, souhlas s ní dává držitel
+  # projektu nastavením COQUI_TOS_AGREED=1 v .env, nikdy výchozí hodnota.
+  # Start: VOICE_URL=http://voice:8111 v .env, pak docker compose --profile clone up -d
+  voice:
+    build: ../../workers/voice
+    container_name: translator-voice
+    profiles: [clone]
+    restart: unless-stopped
+    environment:
+      VOICE_ENGINE: ${VOICE_ENGINE:-xtts}
+      COQUI_TOS_AGREED: ${COQUI_TOS_AGREED:-0}
+      XTTS_MODEL: /models/xtts
+      VOICES_DIR: /voices
+    volumes:
+      - /srv/work/translator-models/voice:/models
+      - /srv/translator-voices:/voices   # mimo /srv/work: zálohu by smazání hlasu nezasáhlo
+    deploy: { resources: { reservations: { devices: [{ driver: nvidia, count: all, capabilities: [gpu] }] } } }
 
   # Veřejný vstup. Jen odchozí spojení, takže přesun domény na jiný stroj = spustit
   # tento kontejner tam se stejným tokenem. Start: docker compose --profile tunnel up -d

@@ -85,12 +85,13 @@ async def utter(ws, pcm: bytes) -> dict:
             return out
 
 
-async def session(n: int, rounds: int, deadline: float | None, clips: list) -> list[dict]:
+async def session(n: int, rounds: int, deadline: float | None, clips: list, voice: str, device: str) -> list[dict]:
     results = []
     headers = {"Authorization": f"Bearer {os.environ['TRANSLATOR_TOKEN']}"}
     async with websockets.connect(WS_URL, additional_headers=headers, max_size=None) as ws:
-        await ws.send(json.dumps({"type": "session.start", "deviceId": f"e2e-{n}",
-                                  "langA": "cs", "langB": "en", "mode": "auto"}))
+        await ws.send(json.dumps({"type": "session.start", "deviceId": device or f"e2e-{n}",
+                                  "langA": "cs", "langB": "en", "mode": "auto",
+                                  **({"voiceA": voice, "voiceB": voice} if voice else {})}))
         json.loads(await ws.recv())
         i = n  # sessions start at different phrases
         while (deadline and time.monotonic() < deadline) or (not deadline and i - n < rounds):
@@ -114,10 +115,12 @@ async def main() -> None:
     ap.add_argument("--rounds", type=int, default=len(PHRASES))
     ap.add_argument("--minutes", type=float, default=0)
     ap.add_argument("--out", default="")
+    ap.add_argument("--voice", default="", help="clone:<id> for both sides")
+    ap.add_argument("--device", default="", help="owner of the cloned voice")
     args = ap.parse_args()
     clips = [speech(lang, text) for lang, text in PHRASES]
     deadline = time.monotonic() + args.minutes * 60 if args.minutes else None
-    groups = await asyncio.gather(*(session(n, args.rounds, deadline, clips)
+    groups = await asyncio.gather(*(session(n, args.rounds, deadline, clips, args.voice, args.device)
                                     for n in range(args.sessions)))
     rows = [r for g in groups for r in g]
     for r in rows[:len(PHRASES)]:

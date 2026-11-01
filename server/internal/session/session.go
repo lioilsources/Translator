@@ -407,7 +407,7 @@ func (s *Session) synthesize(text, lang, voice string) ([]byte, error) {
 		return nil, err
 	}
 	defer func() { <-s.deps.Limits.TTS }()
-	return s.deps.TTS.Synthesize(ctx, backend.TTSRequest{Text: text, Language: lang, Voice: voice})
+	return s.deps.TTS.Synthesize(ctx, backend.TTSRequest{Text: text, Language: lang, Voice: voice, Device: s.cfg.DeviceID})
 }
 
 // voiceFor picks the voice the listener hears: the speaker's chosen voice in

@@ -67,6 +67,8 @@ class ConversationController {
     required String deviceId,
     required String langA,
     required String langB,
+    String? voiceA,
+    String? voiceB,
   }) {
     _sub = transport.frames.listen(_onFrame, onError: (_) => _lost(), onDone: _lost);
     transport.sendText(
@@ -76,6 +78,8 @@ class ConversationController {
         langB: langB,
         mode: mode,
         tts: ttsEnabled,
+        voiceA: voiceA,
+        voiceB: voiceB,
       ),
     );
   }

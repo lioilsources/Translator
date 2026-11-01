@@ -56,6 +56,7 @@ type MT interface {
 // TTSRequest describes one synthesized clip.
 type TTSRequest struct {
 	Text, Language, Voice string
+	Device                string // owner of a cloned voice
 }
 
 // TTS synthesizes one clip and returns encoded audio.
