@@ -34,6 +34,8 @@ ASR worker, LLM i TTS běží jen přes broker. `tts` je v profilech `llm` a `co
 sparkctl exec translator qwen36,tts 30 15 "translator test" -- <příkaz>
 ```
 
+Záloha pro `tlumocnik-spark.ol1n.com` je `deploy/spark/run.sh`: ASR, orchestrátor a tunel běží jen po dobu lease, bez klonování. Appka na ten server přepne, jen když `/healthz` hlásí `ready`.
+
 ## Provoz na L40S
 
 Celý stack běží jako vlastní Compose projekt, nezávislý na profilech `switch.sh`:

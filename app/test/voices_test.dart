@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:translator_app/core/platform.dart';
 import 'package:translator_app/l10n/app_localizations.dart';
+import 'package:translator_app/ui/screens.dart';
 import 'package:translator_app/ui/voices.dart';
+import 'package:translator_core/translator_core.dart';
 
 Widget _app(Widget child) => MaterialApp(
   locale: const Locale('cs'),
@@ -53,6 +55,37 @@ void main() {
     settings.useServer(servers['SPARK']!);
     expect(settings.url, servers['SPARK']);
     expect(settings.voiceA, isNull);
+  });
+
+  testWidgets('a past conversation shows original and translation', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('cs'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: TranscriptScreen(
+          transcript: Transcript(
+            id: '1',
+            startedAt: DateTime(2026, 11),
+            langA: 'cs',
+            langB: 'en',
+            entries: [
+              TranscriptEntry(
+                id: 1,
+                at: DateTime(2026, 11),
+                side: Side.a,
+                original: 'Ahoj',
+                translation: 'Hello',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(find.textContaining('Ahoj'), findsOneWidget);
+    expect(find.text('Hello'), findsOneWidget);
   });
 
   test('only a fully ready server counts as ready', () {

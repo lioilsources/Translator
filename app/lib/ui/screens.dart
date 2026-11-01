@@ -314,8 +314,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  onTap: () => unawaited(
-                    SharePlus.instance.share(ShareParams(text: t.exportText())),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => TranscriptScreen(transcript: t),
+                    ),
                   ),
                   trailing: IconButton(
                     tooltip: l.delete,
@@ -329,6 +331,83 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// One past conversation to read: who said what, and its translation.
+class TranscriptScreen extends StatelessWidget {
+  const TranscriptScreen({required this.transcript, super.key});
+  final Transcript transcript;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final t = transcript;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          '${languageOf(t.langA).flag} ${languageOf(t.langB).flag}  '
+          '${MaterialLocalizations.of(context).formatShortDate(t.startedAt)}',
+        ),
+        actions: [
+          IconButton(
+            tooltip: l.share,
+            icon: const Icon(Icons.ios_share),
+            onPressed: () => unawaited(
+              SharePlus.instance.share(ShareParams(text: t.exportText())),
+            ),
+          ),
+        ],
+      ),
+      body: SelectionArea(
+        child: ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: t.entries.length,
+          itemBuilder: (context, i) => _Utterance(entry: t.entries[i]),
+        ),
+      ),
+    );
+  }
+}
+
+class _Utterance extends StatelessWidget {
+  const _Utterance({required this.entry});
+  final TranscriptEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mine = entry.side != Side.b;
+    final time = TimeOfDay.fromDateTime(entry.at).format(context);
+    return Align(
+      alignment: mine ? Alignment.centerLeft : Alignment.centerRight,
+      child: FractionallySizedBox(
+        widthFactor: 0.88,
+        child: Card(
+          color: mine
+              ? theme.colorScheme.surfaceContainerHighest
+              : theme.colorScheme.secondaryContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$time  ${entry.original}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (entry.translation.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(entry.translation, style: theme.textTheme.titleMedium),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
