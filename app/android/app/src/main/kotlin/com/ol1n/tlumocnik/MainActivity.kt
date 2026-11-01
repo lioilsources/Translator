@@ -1,4 +1,4 @@
-package com.ol1n.translator_app
+package com.ol1n.tlumocnik
 
 import io.flutter.embedding.android.FlutterActivity
 
