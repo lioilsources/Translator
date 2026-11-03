@@ -12,7 +12,6 @@
   "history": "History",
   "settings": "Settings",
   "serverUrl": "Server address",
-  "serverToken": "Access token",
   "save": "Save",
   "statusConnecting": "Connecting…",
   "statusListening": "Listening",
@@ -57,5 +56,15 @@
   "serverReady": "ready",
   "serverDegraded": "partly down",
   "serverOffline": "offline",
-  "serverRecheck": "Check again"
+  "serverRecheck": "Check again",
+  "deviceTier": "This device",
+  "deviceTierPublic": "Basic: limited translation time a day",
+  "deviceTierTester": "Tester: longer translation and your own voice",
+  "deviceTierUnknown": "The server is not answering",
+  "inviteCode": "Invite code",
+  "inviteHelp": "From the app's author, unlocks testing",
+  "inviteWrong": "This code is not valid",
+  "inviteUnavailable": "The code cannot be checked now, try later",
+  "errorQuota": "Today's translation minutes are used up, more tomorrow",
+  "voiceNeedsInvite": "Your own voice is for testers with an invite code for now"
 }

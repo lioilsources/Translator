@@ -89,6 +89,8 @@ class _SetupScreenState extends State<SetupScreen> {
       messenger.showSnackBar(SnackBar(content: Text(l.micDenied)));
       return;
     }
+    // A first start registers the phone; later ones check its token still works.
+    await DeviceAuth(s).ensure();
     await navigator.push(
       MaterialPageRoute<void>(
         builder: (_) => LiveConversationScreen(settings: s, mic: mic),
@@ -423,13 +425,54 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final _url = TextEditingController(text: widget.settings.url);
-  late final _token = TextEditingController(text: widget.settings.token);
+  final _invite = TextEditingController();
   final _health = <String, ServerHealth>{};
+  DeviceTier? _tier;
+  String? _inviteError;
+  var _saving = false;
 
   @override
   void initState() {
     super.initState();
     unawaited(_checkServers());
+    unawaited(_checkDevice());
+  }
+
+  Future<void> _checkDevice() async {
+    final tier = await DeviceAuth(widget.settings).ensure();
+    if (mounted) setState(() => _tier = tier);
+  }
+
+  String _tierLabel(AppLocalizations l) => switch (_tier) {
+    DeviceTier.public => l.deviceTierPublic,
+    DeviceTier.tester => l.deviceTierTester,
+    DeviceTier.legacy => l.deviceTierTester,
+    _ => l.deviceTierUnknown,
+  };
+
+  Future<void> _save() async {
+    final l = AppLocalizations.of(context);
+    final navigator = Navigator.of(context);
+    widget.settings.useServer(_url.text.trim());
+    final code = _invite.text.trim();
+    if (code.isNotEmpty) {
+      setState(() {
+        _saving = true;
+        _inviteError = null;
+      });
+      try {
+        await DeviceAuth(widget.settings).redeem(code);
+      } on InviteRejected {
+        setState(() => _inviteError = l.inviteWrong);
+        return;
+      } on Exception {
+        setState(() => _inviteError = l.inviteUnavailable);
+        return;
+      } finally {
+        if (mounted) setState(() => _saving = false);
+      }
+    }
+    navigator.pop();
   }
 
   Future<void> _checkServers() async {
@@ -457,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _url.dispose();
-    _token.dispose();
+    _invite.dispose();
     super.dispose();
   }
 
@@ -501,19 +544,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(labelText: l.serverUrl),
             ),
-            TextField(
-              controller: _token,
-              obscureText: true,
-              decoration: InputDecoration(labelText: l.serverToken),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l.deviceTier),
+              subtitle: Text(_tierLabel(l)),
             ),
+            if (_tier != DeviceTier.tester && _tier != DeviceTier.legacy)
+              TextField(
+                controller: _invite,
+                decoration: InputDecoration(
+                  labelText: l.inviteCode,
+                  helperText: l.inviteHelp,
+                  errorText: _inviteError,
+                ),
+              ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () {
-                widget.settings
-                  ..useServer(_url.text.trim())
-                  ..token = _token.text.trim();
-                Navigator.pop(context);
-              },
+              onPressed: _saving ? null : _save,
               child: Text(l.save),
             ),
           ],

@@ -253,6 +253,7 @@ class _Controls extends StatelessWidget {
     'asr_unavailable' || 'mt_unavailable' => l.errorBackend,
     'tts_unavailable' || 'playback_failed' => l.errorVoice,
     'busy' => l.errorBusy,
+    'quota' => l.errorQuota,
     'too_long' => l.errorTooLong,
     _ => l.errorGeneric,
   };

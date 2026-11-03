@@ -17,12 +17,14 @@ const _defaultUrl = String.fromEnvironment(
   defaultValue: 'wss://tlumocnik.ol1n.com/v1/ws',
 );
 
-/// Backends offered in settings; both accept the same token.
+/// Backends offered in settings; both accept the same device token.
 const servers = {
   'L40S': 'wss://tlumocnik.ol1n.com/v1/ws',
   'SPARK': 'wss://tlumocnik-spark.ol1n.com/v1/ws',
 };
 
+/// The old shared token. Release builds no longer carry it; the phone gets
+/// its own token from the server instead ([DeviceAuth]).
 const _defaultToken = String.fromEnvironment('TRANSLATOR_TOKEN');
 
 /// WebSocket transport; binary frames arrive as Uint8List.
@@ -120,8 +122,14 @@ class Settings {
   String get url => _prefs.getString('url') ?? _defaultUrl;
   set url(String v) => _prefs.setString('url', v);
 
-  String get token => _prefs.getString('token') ?? _defaultToken;
-  set token(String v) => _prefs.setString('token', v);
+  /// What every request sends: this phone's own token, or the old shared one.
+  String get token => deviceToken ?? legacyToken;
+
+  String get legacyToken => _prefs.getString('token') ?? _defaultToken;
+
+  String? get deviceToken => _prefs.getString('deviceToken');
+  set deviceToken(String? v) =>
+      v == null ? _prefs.remove('deviceToken') : _prefs.setString('deviceToken', v);
 
   String get langA => _prefs.getString('langA') ?? 'cs';
   set langA(String v) => _prefs.setString('langA', v);
@@ -169,6 +177,113 @@ class Settings {
     _prefs.setString('deviceId', fresh);
     return fresh;
   }
+
+  /// The server names the device; its token carries the same id.
+  set deviceId(String v) => _prefs.setString('deviceId', v);
+}
+
+Uri _httpUri(String wsUrl, String path, [Map<String, String>? query]) {
+  final ws = Uri.parse(wsUrl);
+  return ws.replace(
+    scheme: ws.scheme == 'ws' ? 'http' : 'https',
+    path: path,
+    queryParameters: query,
+  );
+}
+
+/// The device's level on the server: limits, and whether it may record a voice.
+enum DeviceTier { public, tester, legacy, unknown }
+
+DeviceTier _tier(Object? name) =>
+    DeviceTier.values.asNameMap()[name] ?? DeviceTier.unknown;
+
+/// The invite code was wrong.
+class InviteRejected implements Exception {}
+
+/// Gets and keeps this phone's own token (docs/protocol.md, „Zařízení“).
+class DeviceAuth {
+  DeviceAuth(this._settings);
+
+  final Settings _settings;
+
+  Future<(int, Map<String, dynamic>)> _call(
+    String method,
+    String path, {
+    String? bearer,
+    Map<String, String>? body,
+  }) async {
+    final http = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+    try {
+      final request = await http.openUrl(method, _httpUri(_settings.url, path));
+      if (bearer != null && bearer.isNotEmpty) {
+        request.headers.set('Authorization', 'Bearer $bearer');
+      }
+      if (body != null) {
+        request.headers.contentType = ContentType.json;
+        request.write(jsonEncode(body));
+      }
+      final response = await request.close().timeout(const Duration(seconds: 10));
+      final text = await response.transform(utf8.decoder).join();
+      final json = response.statusCode < 300 && text.isNotEmpty
+          ? jsonDecode(text) as Map<String, dynamic>
+          : const <String, dynamic>{};
+      return (response.statusCode, json);
+    } finally {
+      http.close(force: true);
+    }
+  }
+
+  /// Makes sure the stored token works and registers when there is none or it
+  /// was revoked. Null when the server cannot say (offline, or a server
+  /// without device tokens): the conversation then simply tries what it has.
+  Future<DeviceTier?> ensure() async {
+    try {
+      final stored = _settings.deviceToken;
+      if (stored != null) {
+        final (status, me) = await _call('GET', '/v1/devices/me', bearer: stored);
+        if (status == 200) return _tier(me['tier']);
+        if (status != 401) return null;
+        _settings.deviceToken = null;
+      }
+      // The old shared token vouches for this phone, so it keeps its id and
+      // with it the recorded voices.
+      final legacy = _settings.legacyToken;
+      final (status, issued) = await _call(
+        'POST',
+        '/v1/devices',
+        bearer: legacy,
+        body: {if (legacy.isNotEmpty) 'deviceId': _settings.deviceId},
+      );
+      if (status != 201) return null;
+      _store(issued);
+      return _tier(issued['tier']);
+    } on Exception {
+      return null;
+    }
+  }
+
+  /// Redeems an invite code for the tester level.
+  Future<DeviceTier> redeem(String code) async {
+    if (await ensure() == null) {
+      throw const HttpException('devices: server unavailable');
+    }
+    final (status, issued) = await _call(
+      'POST',
+      '/v1/devices/upgrade',
+      bearer: _settings.deviceToken,
+      body: {'invite': code},
+    );
+    if (status == 403) throw InviteRejected();
+    if (status != 200) throw HttpException('devices: status $status');
+    _store(issued);
+    return _tier(issued['tier']);
+  }
+
+  void _store(Map<String, dynamic> issued) {
+    _settings
+      ..deviceToken = issued['token'] as String
+      ..deviceId = issued['deviceId'] as String;
+  }
 }
 
 /// Whether a backend can take a conversation right now.
@@ -188,11 +303,7 @@ ServerHealth parseHealth(int status, String body) {
 
 /// Asks a backend's /healthz, which also probes its speech and LLM services.
 Future<ServerHealth> checkServer(String wsUrl) async {
-  final ws = Uri.parse(wsUrl);
-  final uri = ws.replace(
-    scheme: ws.scheme == 'ws' ? 'http' : 'https',
-    path: '/healthz',
-  );
+  final uri = _httpUri(wsUrl, '/healthz');
   final http = HttpClient()..connectionTimeout = const Duration(seconds: 5);
   try {
     final request = await http.getUrl(uri);
@@ -221,29 +332,31 @@ class Voice {
   String get wireName => wirePrefix + id;
 }
 
+/// Recording a voice needs the tester level (an invite code).
+class VoiceForbidden implements Exception {}
+
 /// The voice library over HTTP. The base URL follows the conversation URL.
 class VoiceLibrary {
   VoiceLibrary(this._settings);
 
   final Settings _settings;
   final _http = HttpClient();
+  late final Future<DeviceTier?> _device = DeviceAuth(_settings).ensure();
 
-  Uri _uri(String path, [Map<String, String> query = const {}]) {
-    final ws = Uri.parse(_settings.url);
-    return ws.replace(
-      scheme: ws.scheme == 'ws' ? 'http' : 'https',
-      path: '/v1/voices$path',
-      queryParameters: {'device': _settings.deviceId, ...query},
-    );
-  }
+  Uri _uri(String path, [Map<String, String> query = const {}]) => _httpUri(
+    _settings.url,
+    '/v1/voices$path',
+    {'device': _settings.deviceId, ...query},
+  );
 
   Future<String> _send(
     String method,
-    Uri uri, {
+    Uri Function() uri, {
     Uint8List? body,
     required int expect,
   }) async {
-    final request = await _http.openUrl(method, uri);
+    await _device;
+    final request = await _http.openUrl(method, uri());
     request.headers.set('Authorization', 'Bearer ${_settings.token}');
     if (body != null) {
       request.headers.contentType = ContentType.binary;
@@ -252,14 +365,15 @@ class VoiceLibrary {
     }
     final response = await request.close();
     final text = await response.transform(utf8.decoder).join();
+    if (response.statusCode == 403) throw VoiceForbidden();
     if (response.statusCode != expect) {
-      throw HttpException('voices: status ${response.statusCode}', uri: uri);
+      throw HttpException('voices: status ${response.statusCode}');
     }
     return text;
   }
 
   Future<List<Voice>> list() async {
-    final text = await _send('GET', _uri(''), expect: 200);
+    final text = await _send('GET', () => _uri(''), expect: 200);
     return [
       for (final item in jsonDecode(text) as List<dynamic>)
         Voice.fromJson(item as Map<String, dynamic>),
@@ -268,12 +382,13 @@ class VoiceLibrary {
 
   Future<void> create(String name, Uint8List pcm) => _send(
     'POST',
-    _uri('', {'name': name, 'consent': 'true'}),
+    () => _uri('', {'name': name, 'consent': 'true'}),
     body: pcm,
     expect: 201,
   );
 
-  Future<void> delete(String id) => _send('DELETE', _uri('/$id'), expect: 204);
+  Future<void> delete(String id) =>
+      _send('DELETE', () => _uri('/$id'), expect: 204);
 }
 
 /// History as one JSON file per conversation, on the device only.

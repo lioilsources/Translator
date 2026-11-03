@@ -17,6 +17,7 @@ import (
 	"github.com/coder/websocket"
 
 	"translator/server/internal/backend"
+	"translator/server/internal/devices"
 	"translator/server/internal/protocol"
 	"translator/server/internal/session"
 )
@@ -58,11 +59,16 @@ func (f *fakeMT) Translate(_ context.Context, _ backend.MTRequest, on func(strin
 }
 
 type fakeTTS struct {
-	err error
+	err     error
+	mu      sync.Mutex
+	devices []string
 }
 
 func (f *fakeTTS) Format() string { return "mp3" }
 func (f *fakeTTS) Synthesize(_ context.Context, r backend.TTSRequest) ([]byte, error) {
+	f.mu.Lock()
+	f.devices = append(f.devices, r.Device)
+	f.mu.Unlock()
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -82,7 +88,7 @@ func newRig(t *testing.T, token string) *rig {
 	r := &rig{asr: &fakeASR{}, mt: &fakeMT{deltas: []string{"Hello there, my friend. ", "How are you today?"}}, tts: &fakeTTS{}}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	r.h = &Handler{
-		Token: token, MaxSessions: 8, IdleTimeout: time.Minute, Logger: log,
+		Devices: &devices.Service{Shared: token}, MaxSessions: 8, IdleTimeout: time.Minute, Logger: log,
 		Deps: session.Deps{
 			ASR: r.asr, MT: r.mt, TTS: r.tts, Limits: session.NewLimits(2, 5, 3),
 			DefaultVoices: map[string]string{"en": "kokoro:x", "cs": "piper:y"},
@@ -493,4 +499,61 @@ func TestFiveConcurrentSessions(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestDeviceToken(t *testing.T) {
+	r := newRig(t, "")
+	issuer, err := devices.NewIssuer(strings.Repeat("ab", 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.h.Devices = &devices.Service{Issuer: issuer, Limits: devices.Limits{PublicMinutes: 1}}
+	token := issuer.Issue(devices.Device{ID: "abcdef0123456789", Tier: devices.Public}, time.Now())
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	open := func() *client {
+		conn, _, err := websocket.Dial(ctx, r.url, &websocket.DialOptions{
+			HTTPHeader: http.Header{"Authorization": {"Bearer " + token}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { conn.CloseNow() })
+		return &client{t: t, conn: conn, ctx: ctx}
+	}
+
+	c := open()
+	// The client's own deviceId is ignored: voices follow the token.
+	c.text(`{"type":"session.start","deviceId":"someone-else","langA":"cs","langB":"en","voiceA":"clone:1"}`)
+	if m := c.read(); m.typ != protocol.TypeSessionReady {
+		t.Fatalf("want ready, got %+v", m)
+	}
+
+	second := open()
+	if f := second.read(); f.typ != protocol.TypeError || f.raw["code"] != protocol.ErrBusy {
+		t.Fatalf("second session of one device: %+v", f)
+	}
+
+	c.audio(30)
+	c.text(`{"type":"audio.end"}`)
+	c.untilEnd()
+	r.tts.mu.Lock()
+	got := r.tts.devices
+	r.tts.mu.Unlock()
+	if len(got) == 0 || got[0] != "abcdef0123456789" {
+		t.Fatalf("TTS device: %v", got)
+	}
+	c.audio(30)
+	c.text(`{"type":"audio.end"}`)
+	c.untilEnd()
+	c.audio(1)
+	for {
+		f := c.read()
+		if f.typ == protocol.TypeError {
+			if f.raw["code"] != protocol.ErrQuota {
+				t.Fatalf("want quota, got %+v", f)
+			}
+			return
+		}
+	}
 }

@@ -1,6 +1,6 @@
 # WS protokol v1
 
-`GET /v1/ws`, hlavička `Authorization: Bearer <token>`. Textové rámce jsou JSON s polem `type`, binární rámce nesou audio. Definice: `server/internal/protocol`, `app/packages/translator_core/lib/src/protocol.dart`.
+`GET /v1/ws`, hlavička `Authorization: Bearer <token>`. Token je token zařízení (viz níže), nebo dokud platí, starý sdílený `TRANSLATOR_TOKEN`. Textové rámce jsou JSON s polem `type`, binární rámce nesou audio. Definice: `server/internal/protocol`, `app/packages/translator_core/lib/src/protocol.dart`.
 
 Strany: `a` je majitel telefonu (dolní polovina), `b` kolega (horní, otočená).
 
@@ -31,7 +31,19 @@ Pořadí pro jednu promluvu: `asr.final`, `mt.partial`*, `mt.final`, (`tts.start
 | `utterance.end {utteranceId, status, reason?}` | vždy poslední; `ok`, `dropped`, `uncertain`, `failed` |
 | `error {code, message, utteranceId?}` | viz níže |
 
-Chybové kódy: `bad_request`, `no_session`, `too_long`, `busy`, `queue_full`, `asr_unavailable`, `mt_unavailable`, `tts_unavailable`. Při `tts_unavailable` zůstává překlad na obrazovce.
+Chybové kódy: `bad_request`, `no_session`, `too_long`, `busy`, `queue_full`, `asr_unavailable`, `mt_unavailable`, `tts_unavailable`, `quota` (zařízení vyčerpalo dnešní minuty, server pak spojení zavře). `busy` přijde i tehdy, když stejné zařízení už má otevřený jiný rozhovor. Při `tts_unavailable` zůstává překlad na obrazovce.
+
+## Zařízení
+
+Jen když server běží s `DEVICE_KEY`. Token je podepsaný (`v1.<payload>.<podpis>`) a platí na každém serveru se stejným klíčem. `deviceId` v `session.start` i `device` u hlasů server nahradí zařízením z tokenu.
+
+| volání | význam |
+|---|---|
+| `POST /v1/devices {invite?, deviceId?}` | nové zařízení → `201 {token, deviceId, tier}`. `tier` je `public`, se správným `invite` `tester`. Se starým sdíleným tokenem dostane `tester` a smí si ponechat svoje `deviceId` (i s hlasy). Limit registrací na IP a den: `429` |
+| `GET /v1/devices/me` | `200 {deviceId, tier}`, nebo `401`, když token neplatí |
+| `POST /v1/devices/upgrade {invite}` | s tokenem zařízení → `200` nový token se stejným `deviceId` a `tier: tester`; špatný kód `403` |
+
+Limity: `public` má `PUBLIC_MINUTES` řeči denně a hlas nenahraje (`403`), `tester` má `TESTER_MINUTES`. Na 401 si klient token zahodí a zaregistruje se znovu.
 
 ## Knihovna hlasů
 

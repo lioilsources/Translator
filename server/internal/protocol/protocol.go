@@ -74,6 +74,7 @@ const (
 	ErrASRUnavailable = "asr_unavailable"
 	ErrMTUnavailable  = "mt_unavailable"
 	ErrTTSUnavailable = "tts_unavailable"
+	ErrQuota          = "quota"
 )
 
 // Envelope carries only the type; the full frame is decoded a second time.
