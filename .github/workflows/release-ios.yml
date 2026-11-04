@@ -1,8 +1,10 @@
 name: Release iOS
 
-# Only manual: the IPA contains the access token and the repo is public, so it
-# goes to TestFlight and never to a GitHub Release or artifact.
+# Tag v1.2.3 -> TestFlight. The IPA carries no secret: each phone registers
+# for its own device token (docs/protocol.md, "Zařízení").
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -104,9 +106,7 @@ jobs:
 
       - name: Build Flutter iOS (no codesign)
         working-directory: app
-        env:
-          TRANSLATOR_TOKEN: ${{ secrets.TRANSLATOR_TOKEN }}
-        run: flutter build ios --release --no-codesign --dart-define=TRANSLATOR_TOKEN=$TRANSLATOR_TOKEN
+        run: flutter build ios --release --no-codesign
 
       - name: Archive with manual signing
         env:
