@@ -9,5 +9,7 @@ HF="$HOME/.local/bin/hf"
     --exclude '*.bin' --exclude '*.msgpack' --exclude '*.h5' --exclude '*.ot'
 [ -f "$M/speaker/ecapa-voxceleb/embedding_model.ckpt" ] ||
   "$HF" download speechbrain/spkrec-ecapa-voxceleb --local-dir "$M/speaker/ecapa-voxceleb"
-[ -f .env ] || { umask 077; echo "TRANSLATOR_TOKEN=$(openssl rand -hex 24)" > .env; }
+[ -f .env ] || { umask 077; touch .env; }
+# Klíč tokenů zařízení. SPARK musí mít stejný, jinak tam tokeny neplatí.
+grep -q '^DEVICE_KEY=.' .env || { umask 077; echo "DEVICE_KEY=$(openssl rand -hex 32)" >> .env; }
 docker compose up -d --build "$@"

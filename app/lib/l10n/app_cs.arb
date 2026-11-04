@@ -12,7 +12,6 @@
   "history": "Historie",
   "settings": "Nastavení",
   "serverUrl": "Adresa serveru",
-  "serverToken": "Přístupový token",
   "save": "Uložit",
   "statusConnecting": "Připojuji…",
   "statusListening": "Poslouchám",
@@ -71,5 +70,15 @@
   "serverReady": "připraveno",
   "serverDegraded": "neběží vše",
   "serverOffline": "nedostupné",
-  "serverRecheck": "Znovu ověřit"
+  "serverRecheck": "Znovu ověřit",
+  "deviceTier": "Toto zařízení",
+  "deviceTierPublic": "Základní: omezený čas překladu denně",
+  "deviceTierTester": "Tester: delší překlad a vlastní hlas",
+  "deviceTierUnknown": "Server teď neodpovídá",
+  "inviteCode": "Zvací kód",
+  "inviteHelp": "Od autora appky, odemkne testování",
+  "inviteWrong": "Tenhle kód neplatí",
+  "inviteUnavailable": "Kód teď nejde ověřit, zkuste to později",
+  "errorQuota": "Dnešní minuty překladu došly, zítra zase",
+  "voiceNeedsInvite": "Vlastní hlas je zatím jen pro testery se zvacím kódem"
 }

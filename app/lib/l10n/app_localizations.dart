@@ -170,12 +170,6 @@ abstract class AppLocalizations {
   /// **'Adresa serveru'**
   String get serverUrl;
 
-  /// No description provided for @serverToken.
-  ///
-  /// In cs, this message translates to:
-  /// **'Přístupový token'**
-  String get serverToken;
-
   /// No description provided for @save.
   ///
   /// In cs, this message translates to:
@@ -445,6 +439,66 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Znovu ověřit'**
   String get serverRecheck;
+
+  /// No description provided for @deviceTier.
+  ///
+  /// In cs, this message translates to:
+  /// **'Toto zařízení'**
+  String get deviceTier;
+
+  /// No description provided for @deviceTierPublic.
+  ///
+  /// In cs, this message translates to:
+  /// **'Základní: omezený čas překladu denně'**
+  String get deviceTierPublic;
+
+  /// No description provided for @deviceTierTester.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tester: delší překlad a vlastní hlas'**
+  String get deviceTierTester;
+
+  /// No description provided for @deviceTierUnknown.
+  ///
+  /// In cs, this message translates to:
+  /// **'Server teď neodpovídá'**
+  String get deviceTierUnknown;
+
+  /// No description provided for @inviteCode.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zvací kód'**
+  String get inviteCode;
+
+  /// No description provided for @inviteHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Od autora appky, odemkne testování'**
+  String get inviteHelp;
+
+  /// No description provided for @inviteWrong.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tenhle kód neplatí'**
+  String get inviteWrong;
+
+  /// No description provided for @inviteUnavailable.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kód teď nejde ověřit, zkuste to později'**
+  String get inviteUnavailable;
+
+  /// No description provided for @errorQuota.
+  ///
+  /// In cs, this message translates to:
+  /// **'Dnešní minuty překladu došly, zítra zase'**
+  String get errorQuota;
+
+  /// No description provided for @voiceNeedsInvite.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vlastní hlas je zatím jen pro testery se zvacím kódem'**
+  String get voiceNeedsInvite;
 }
 
 class _AppLocalizationsDelegate

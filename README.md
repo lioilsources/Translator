@@ -24,7 +24,7 @@ cd server && TRANSLATOR_ALLOW_ANON=1 go run ./cmd/translator
 cd app && flutter run --profile --dart-define=TRANSLATOR_URL=ws://<mac>:8096/v1/ws
 ```
 
-Proměnné serveru: `.env.example`. Bez `TRANSLATOR_TOKEN` server odmítne start, pokud není `TRANSLATOR_ALLOW_ANON=1`.
+Proměnné serveru: `.env.example`. Bez `DEVICE_KEY` ani `TRANSLATOR_TOKEN` server odmítne start, pokud není `TRANSLATOR_ALLOW_ANON=1`. Tokeny zařízení: `docs/protocol.md`, oddíl „Zařízení“.
 
 ## Provoz na SPARKu
 

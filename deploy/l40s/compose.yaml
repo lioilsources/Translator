@@ -48,7 +48,12 @@ services:
     restart: unless-stopped
     ports: ["127.0.0.1:8096:8096"]
     environment:
-      TRANSLATOR_TOKEN: ${TRANSLATOR_TOKEN:?}
+      # Tokeny zařízení (docs/protocol.md, „Zařízení“). TRANSLATOR_TOKEN je
+      # starý sdílený token z buildů; po přechodu ho smaž.
+      TRANSLATOR_TOKEN: ${TRANSLATOR_TOKEN:-}
+      DEVICE_KEY: ${DEVICE_KEY:-}
+      INVITE_CODE: ${INVITE_CODE:-}
+      DEVICE_DENY: ${DEVICE_DENY:-}
       ASR_URL: http://asr:8110
       MT_URL: http://llm:8000
       MT_MODEL: translator-mt

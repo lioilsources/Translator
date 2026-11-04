@@ -159,6 +159,13 @@ class _RecordVoiceScreenState extends State<RecordVoiceScreen> {
     try {
       await widget.library.create(_name.text.trim(), _pcm.takeBytes());
       navigator.pop(true);
+    } on VoiceForbidden {
+      if (mounted) {
+        setState(() {
+          _uploading = false;
+          _error = l.voiceNeedsInvite;
+        });
+      }
     } on Exception {
       if (mounted) {
         setState(() {

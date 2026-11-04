@@ -3,18 +3,17 @@ package ws
 
 import (
 	"context"
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 	"regexp"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
 
+	"translator/server/internal/devices"
 	"translator/server/internal/protocol"
 	"translator/server/internal/session"
 )
@@ -30,7 +29,7 @@ var langRe = regexp.MustCompile(`^[a-z]{2,3}$`)
 // Handler upgrades connections and runs one session per connection.
 type Handler struct {
 	Deps        session.Deps
-	Token       string // empty disables auth
+	Devices     *devices.Service
 	MaxSessions int32
 	IdleTimeout time.Duration
 	Logger      *slog.Logger
@@ -40,18 +39,10 @@ type Handler struct {
 // Active returns the number of open connections.
 func (h *Handler) Active() int32 { return h.active.Load() }
 
-// Authorized reports whether the request carries the shared token.
-func (h *Handler) Authorized(r *http.Request) bool {
-	if h.Token == "" {
-		return true
-	}
-	got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-	return ok && subtle.ConstantTimeCompare([]byte(got), []byte(h.Token)) == 1
-}
-
 // ServeHTTP implements http.Handler.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !h.Authorized(r) {
+	dev, ok := h.Devices.Authorize(r)
+	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -71,11 +62,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer h.active.Add(-1)
+	if !h.Devices.Enter(dev) {
+		e := &emitter{ctx: r.Context(), conn: conn}
+		_ = e.JSON(protocol.Error{Type: protocol.TypeError, Code: protocol.ErrBusy, Message: "this device already has a conversation open"})
+		conn.Close(websocket.StatusTryAgainLater, "busy")
+		return
+	}
+	defer h.Devices.Leave(dev)
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	go ping(ctx, conn)
-	h.readLoop(ctx, conn)
+	h.readLoop(ctx, conn, dev)
 }
 
 func ping(ctx context.Context, conn *websocket.Conn) {
@@ -96,7 +94,7 @@ func ping(ctx context.Context, conn *websocket.Conn) {
 	}
 }
 
-func (h *Handler) readLoop(ctx context.Context, conn *websocket.Conn) {
+func (h *Handler) readLoop(ctx context.Context, conn *websocket.Conn, dev devices.Device) {
 	out := &emitter{ctx: ctx, conn: conn}
 	var s *session.Session
 	defer func() {
@@ -119,6 +117,11 @@ func (h *Handler) readLoop(ctx context.Context, conn *websocket.Conn) {
 				sendError(out, protocol.ErrNoSession, "send session.start first")
 				continue
 			}
+			if !h.Devices.Spend(dev, len(data)) {
+				sendError(out, protocol.ErrQuota, "today's minutes are used up")
+				conn.Close(websocket.StatusPolicyViolation, "quota")
+				return
+			}
 			s.HandleAudio(data)
 			continue
 		}
@@ -132,7 +135,7 @@ func (h *Handler) readLoop(ctx context.Context, conn *websocket.Conn) {
 				sendError(out, protocol.ErrBadRequest, "session already started")
 				continue
 			}
-			s = h.start(ctx, out, data)
+			s = h.start(ctx, out, data, dev)
 			continue
 		}
 		if s == nil {
@@ -174,7 +177,7 @@ func (h *Handler) readLoop(ctx context.Context, conn *websocket.Conn) {
 	}
 }
 
-func (h *Handler) start(ctx context.Context, out *emitter, data []byte) *session.Session {
+func (h *Handler) start(ctx context.Context, out *emitter, data []byte, dev devices.Device) *session.Session {
 	var m protocol.SessionStart
 	if err := json.Unmarshal(data, &m); err != nil || !langRe.MatchString(m.LangA) || !langRe.MatchString(m.LangB) {
 		sendError(out, protocol.ErrBadRequest, "invalid session.start")
@@ -188,11 +191,15 @@ func (h *Handler) start(ctx context.Context, out *emitter, data []byte) *session
 		sendError(out, protocol.ErrBadRequest, "invalid mode")
 		return nil
 	}
+	if dev.ID != "" {
+		// Voices belong to the device in the token, not to what the client says.
+		m.DeviceID = dev.ID
+	}
 	s := session.New(ctx, h.Deps, out, m)
 	_ = out.JSON(protocol.SessionReady{
 		Type: protocol.TypeSessionReady, SessionID: newID(), Protocol: protocol.Version,
 	})
-	h.Logger.Info("session started", "langA", m.LangA, "langB", m.LangB, "mode", m.Mode)
+	h.Logger.Info("session started", "langA", m.LangA, "langB", m.LangB, "mode", m.Mode, "device", dev.String())
 	return s
 }
 

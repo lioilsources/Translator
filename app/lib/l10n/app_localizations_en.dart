@@ -45,9 +45,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverUrl => 'Server address';
 
   @override
-  String get serverToken => 'Access token';
-
-  @override
   String get save => 'Save';
 
   @override
@@ -190,4 +187,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get serverRecheck => 'Check again';
+
+  @override
+  String get deviceTier => 'This device';
+
+  @override
+  String get deviceTierPublic => 'Basic: limited translation time a day';
+
+  @override
+  String get deviceTierTester =>
+      'Tester: longer translation and your own voice';
+
+  @override
+  String get deviceTierUnknown => 'The server is not answering';
+
+  @override
+  String get inviteCode => 'Invite code';
+
+  @override
+  String get inviteHelp => 'From the app\'s author, unlocks testing';
+
+  @override
+  String get inviteWrong => 'This code is not valid';
+
+  @override
+  String get inviteUnavailable => 'The code cannot be checked now, try later';
+
+  @override
+  String get errorQuota =>
+      'Today\'s translation minutes are used up, more tomorrow';
+
+  @override
+  String get voiceNeedsInvite =>
+      'Your own voice is for testers with an invite code for now';
 }

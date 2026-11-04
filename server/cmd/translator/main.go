@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"translator/server/internal/backend"
+	"translator/server/internal/devices"
 	"translator/server/internal/health"
 	"translator/server/internal/session"
 	"translator/server/internal/ws"
@@ -80,15 +81,27 @@ func healthProbes(ttsURL, voiceURL string) []health.Probe {
 
 // voiceLibrary forwards the library API, behind the token, to the voice worker.
 // /v1/synthesize stays private because only /v1/voices is routed.
-func voiceLibrary(target string, h *ws.Handler) (http.Handler, error) {
+func voiceLibrary(target string, auth *devices.Service) (http.Handler, error) {
 	u, err := url.Parse(target)
 	if err != nil {
 		return nil, fmt.Errorf("VOICE_URL: %w", err)
 	}
 	proxy := httputil.NewSingleHostReverseProxy(u)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !h.Authorized(r) {
+		dev, ok := auth.Authorize(r)
+		if !ok {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if dev.ID != "" {
+			// The library is the token's device, whatever the client asks for.
+			q := r.URL.Query()
+			q.Set("device", dev.ID)
+			r.URL.RawQuery = q.Encode()
+		}
+		// Cloning is XTTS-v2, non-commercial: testers only.
+		if dev.Tier == devices.Public && r.Method == http.MethodPost {
+			http.Error(w, "recording a voice needs an invite code", http.StatusForbidden)
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxRecording)
@@ -96,10 +109,45 @@ func voiceLibrary(target string, h *ws.Handler) (http.Handler, error) {
 	}), nil
 }
 
+// deviceService reads the device token settings. Without DEVICE_KEY only the
+// shared token works, as before.
+func deviceService(token string) (*devices.Service, error) {
+	svc := &devices.Service{Shared: token, Invite: os.Getenv("INVITE_CODE")}
+	if key := os.Getenv("DEVICE_KEY"); key != "" {
+		issuer, err := devices.NewIssuer(key)
+		if err != nil {
+			return nil, err
+		}
+		svc.Issuer = issuer
+	}
+	svc.Deny = devices.ParseDenylist(os.Getenv("DEVICE_DENY"))
+	for _, v := range []struct {
+		key      string
+		fallback int
+		into     *int
+	}{
+		{"PUBLIC_MINUTES", 20, &svc.Limits.PublicMinutes},
+		{"TESTER_MINUTES", 300, &svc.Limits.TesterMinutes},
+		{"REGISTER_PER_IP", 5, &svc.PerIP},
+		{"REGISTER_PER_DAY", 200, &svc.PerDay},
+	} {
+		n, err := envInt(v.key, v.fallback)
+		if err != nil {
+			return nil, err
+		}
+		*v.into = n
+	}
+	return svc, nil
+}
+
 func run(logger *slog.Logger) error {
 	token := os.Getenv("TRANSLATOR_TOKEN")
-	if token == "" && os.Getenv("TRANSLATOR_ALLOW_ANON") != "1" {
-		return errors.New("set TRANSLATOR_TOKEN, or TRANSLATOR_ALLOW_ANON=1 for local development")
+	if token == "" && os.Getenv("DEVICE_KEY") == "" && os.Getenv("TRANSLATOR_ALLOW_ANON") != "1" {
+		return errors.New("set DEVICE_KEY and/or TRANSLATOR_TOKEN, or TRANSLATOR_ALLOW_ANON=1 for local development")
+	}
+	auth, err := deviceService(token)
+	if err != nil {
+		return err
 	}
 	maxSessions, err := envInt("TRANSLATOR_MAX_SESSIONS", 8)
 	if err != nil {
@@ -128,7 +176,7 @@ func run(logger *slog.Logger) error {
 		tts = &backend.CloneTTS{BaseURL: voiceURL, HTTP: httpc, Next: tts, Default: defaultVoices, Logger: logger}
 	}
 	h := &ws.Handler{
-		Token: token, MaxSessions: int32(maxSessions), IdleTimeout: 30 * time.Minute, Logger: logger,
+		Devices: auth, MaxSessions: int32(maxSessions), IdleTimeout: 30 * time.Minute, Logger: logger,
 		Deps: session.Deps{
 			ASR: &backend.ASRClient{BaseURL: env("ASR_URL", "http://localhost:8110"), HTTP: httpc},
 			MT: &backend.MTClient{
@@ -145,12 +193,17 @@ func run(logger *slog.Logger) error {
 	mux := http.NewServeMux()
 	mux.Handle("GET /v1/ws", h)
 	if voiceURL != "" {
-		library, err := voiceLibrary(voiceURL, h)
+		library, err := voiceLibrary(voiceURL, auth)
 		if err != nil {
 			return err
 		}
 		mux.Handle("/v1/voices", library)
 		mux.Handle("/v1/voices/", library)
+	}
+	if auth.Issuer != nil {
+		mux.Handle("POST /v1/devices", auth.RegisterHandler())
+		mux.Handle("POST /v1/devices/upgrade", auth.UpgradeHandler())
+		mux.Handle("GET /v1/devices/me", auth.MeHandler())
 	}
 	mux.Handle("GET /healthz", &health.Checker{
 		HTTP: httpc, Sessions: h.Active, Probes: healthProbes(ttsURL, voiceURL),

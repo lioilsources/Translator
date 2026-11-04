@@ -45,9 +45,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get serverUrl => 'Adresa serveru';
 
   @override
-  String get serverToken => 'Přístupový token';
-
-  @override
   String get save => 'Uložit';
 
   @override
@@ -188,4 +185,35 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get serverRecheck => 'Znovu ověřit';
+
+  @override
+  String get deviceTier => 'Toto zařízení';
+
+  @override
+  String get deviceTierPublic => 'Základní: omezený čas překladu denně';
+
+  @override
+  String get deviceTierTester => 'Tester: delší překlad a vlastní hlas';
+
+  @override
+  String get deviceTierUnknown => 'Server teď neodpovídá';
+
+  @override
+  String get inviteCode => 'Zvací kód';
+
+  @override
+  String get inviteHelp => 'Od autora appky, odemkne testování';
+
+  @override
+  String get inviteWrong => 'Tenhle kód neplatí';
+
+  @override
+  String get inviteUnavailable => 'Kód teď nejde ověřit, zkuste to později';
+
+  @override
+  String get errorQuota => 'Dnešní minuty překladu došly, zítra zase';
+
+  @override
+  String get voiceNeedsInvite =>
+      'Vlastní hlas je zatím jen pro testery se zvacím kódem';
 }
