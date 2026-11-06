@@ -445,6 +445,78 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Znovu ověřit'**
   String get serverRecheck;
+
+  /// No description provided for @earSpikeOpen.
+  ///
+  /// In cs, this message translates to:
+  /// **'Test zvuku do ucha'**
+  String get earSpikeOpen;
+
+  /// No description provided for @earSpikeTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Test zvuku do ucha'**
+  String get earSpikeTitle;
+
+  /// No description provided for @earSpikeIntro.
+  ///
+  /// In cs, this message translates to:
+  /// **'Připoj Bluetooth sluchátka. Mikrofon telefonu poběží celou dobu; klipy půjdou do ucha nebo na chvíli na reproduktor. Na konci výsledek sdílej.'**
+  String get earSpikeIntro;
+
+  /// No description provided for @earSpikeEchoCancel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Potlačení ozvěny'**
+  String get earSpikeEchoCancel;
+
+  /// No description provided for @earSpikeStart.
+  ///
+  /// In cs, this message translates to:
+  /// **'Spustit mikrofon'**
+  String get earSpikeStart;
+
+  /// No description provided for @earSpikeStop.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zastavit'**
+  String get earSpikeStop;
+
+  /// No description provided for @earSpikeFrames.
+  ///
+  /// In cs, this message translates to:
+  /// **'Rámců z mikrofonu: {count}'**
+  String earSpikeFrames(int count);
+
+  /// No description provided for @earSpikeToEar.
+  ///
+  /// In cs, this message translates to:
+  /// **'Do ucha'**
+  String get earSpikeToEar;
+
+  /// No description provided for @earSpikeToSpeaker.
+  ///
+  /// In cs, this message translates to:
+  /// **'Na reproduktor'**
+  String get earSpikeToSpeaker;
+
+  /// No description provided for @earSpikeSeries.
+  ///
+  /// In cs, this message translates to:
+  /// **'Střídat 10×'**
+  String get earSpikeSeries;
+
+  /// No description provided for @earSpikeLocked.
+  ///
+  /// In cs, this message translates to:
+  /// **'Za 10 s do ucha (zamkni)'**
+  String get earSpikeLocked;
+
+  /// No description provided for @earSpikeShare.
+  ///
+  /// In cs, this message translates to:
+  /// **'Sdílet výsledek'**
+  String get earSpikeShare;
 }
 
 class _AppLocalizationsDelegate

@@ -57,5 +57,17 @@
   "serverReady": "ready",
   "serverDegraded": "partly down",
   "serverOffline": "offline",
-  "serverRecheck": "Check again"
+  "serverRecheck": "Check again",
+  "earSpikeOpen": "Earpiece audio test",
+  "earSpikeTitle": "Earpiece audio test",
+  "earSpikeIntro": "Connect Bluetooth headphones. The phone microphone runs the whole time; clips go to the ear or briefly to the speaker. Share the result at the end.",
+  "earSpikeEchoCancel": "Echo cancellation",
+  "earSpikeStart": "Start microphone",
+  "earSpikeStop": "Stop",
+  "earSpikeFrames": "Microphone frames: {count}",
+  "earSpikeToEar": "To ear",
+  "earSpikeToSpeaker": "To speaker",
+  "earSpikeSeries": "Alternate 10×",
+  "earSpikeLocked": "Ear in 10 s (lock phone)",
+  "earSpikeShare": "Share result"
 }

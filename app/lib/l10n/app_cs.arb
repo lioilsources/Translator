@@ -71,5 +71,24 @@
   "serverReady": "připraveno",
   "serverDegraded": "neběží vše",
   "serverOffline": "nedostupné",
-  "serverRecheck": "Znovu ověřit"
+  "serverRecheck": "Znovu ověřit",
+  "earSpikeOpen": "Test zvuku do ucha",
+  "earSpikeTitle": "Test zvuku do ucha",
+  "earSpikeIntro": "Připoj Bluetooth sluchátka. Mikrofon telefonu poběží celou dobu; klipy půjdou do ucha nebo na chvíli na reproduktor. Na konci výsledek sdílej.",
+  "earSpikeEchoCancel": "Potlačení ozvěny",
+  "earSpikeStart": "Spustit mikrofon",
+  "earSpikeStop": "Zastavit",
+  "earSpikeFrames": "Rámců z mikrofonu: {count}",
+  "@earSpikeFrames": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "earSpikeToEar": "Do ucha",
+  "earSpikeToSpeaker": "Na reproduktor",
+  "earSpikeSeries": "Střídat 10×",
+  "earSpikeLocked": "Za 10 s do ucha (zamkni)",
+  "earSpikeShare": "Sdílet výsledek"
 }

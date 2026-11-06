@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:translator_app/core/platform.dart';
 import 'package:translator_app/l10n/app_localizations.dart';
 import 'package:translator_app/ui/conversation_view.dart';
+import 'package:translator_app/ui/ear_spike_screen.dart';
 import 'package:translator_app/ui/languages.dart';
 import 'package:translator_app/ui/voices.dart';
 import 'package:translator_core/translator_core.dart';
@@ -41,9 +42,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   Future<void> _openLibrary() async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => VoiceLibraryScreen(settings: s),
-      ),
+      MaterialPageRoute<void>(builder: (_) => VoiceLibraryScreen(settings: s)),
     );
     await _loadVoices();
   }
@@ -172,9 +171,7 @@ class _SetupScreenState extends State<SetupScreen> {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _start,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-              ),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.all(20)),
               child: Text(l.start),
             ),
           ],
@@ -515,6 +512,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pop(context);
               },
               child: Text(l.save),
+            ),
+            const SizedBox(height: 24),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const EarSpikeScreen()),
+              ),
+              icon: const Icon(Icons.hearing),
+              label: Text(l.earSpikeOpen),
             ),
           ],
         ),

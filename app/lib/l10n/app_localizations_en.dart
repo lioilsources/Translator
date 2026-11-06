@@ -190,4 +190,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get serverRecheck => 'Check again';
+
+  @override
+  String get earSpikeOpen => 'Earpiece audio test';
+
+  @override
+  String get earSpikeTitle => 'Earpiece audio test';
+
+  @override
+  String get earSpikeIntro =>
+      'Connect Bluetooth headphones. The phone microphone runs the whole time; clips go to the ear or briefly to the speaker. Share the result at the end.';
+
+  @override
+  String get earSpikeEchoCancel => 'Echo cancellation';
+
+  @override
+  String get earSpikeStart => 'Start microphone';
+
+  @override
+  String get earSpikeStop => 'Stop';
+
+  @override
+  String earSpikeFrames(int count) {
+    return 'Microphone frames: $count';
+  }
+
+  @override
+  String get earSpikeToEar => 'To ear';
+
+  @override
+  String get earSpikeToSpeaker => 'To speaker';
+
+  @override
+  String get earSpikeSeries => 'Alternate 10×';
+
+  @override
+  String get earSpikeLocked => 'Ear in 10 s (lock phone)';
+
+  @override
+  String get earSpikeShare => 'Share result';
 }

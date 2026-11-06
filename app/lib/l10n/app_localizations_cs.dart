@@ -188,4 +188,43 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get serverRecheck => 'Znovu ověřit';
+
+  @override
+  String get earSpikeOpen => 'Test zvuku do ucha';
+
+  @override
+  String get earSpikeTitle => 'Test zvuku do ucha';
+
+  @override
+  String get earSpikeIntro =>
+      'Připoj Bluetooth sluchátka. Mikrofon telefonu poběží celou dobu; klipy půjdou do ucha nebo na chvíli na reproduktor. Na konci výsledek sdílej.';
+
+  @override
+  String get earSpikeEchoCancel => 'Potlačení ozvěny';
+
+  @override
+  String get earSpikeStart => 'Spustit mikrofon';
+
+  @override
+  String get earSpikeStop => 'Zastavit';
+
+  @override
+  String earSpikeFrames(int count) {
+    return 'Rámců z mikrofonu: $count';
+  }
+
+  @override
+  String get earSpikeToEar => 'Do ucha';
+
+  @override
+  String get earSpikeToSpeaker => 'Na reproduktor';
+
+  @override
+  String get earSpikeSeries => 'Střídat 10×';
+
+  @override
+  String get earSpikeLocked => 'Za 10 s do ucha (zamkni)';
+
+  @override
+  String get earSpikeShare => 'Sdílet výsledek';
 }
