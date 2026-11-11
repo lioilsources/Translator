@@ -26,6 +26,9 @@ cd app && flutter run --profile --dart-define=TRANSLATOR_URL=ws://<mac>:8096/v1/
 
 Proměnné serveru: `.env.example`. Bez `DEVICE_KEY` ani `TRANSLATOR_TOKEN` server odmítne start, pokud není `TRANSLATOR_ALLOW_ANON=1`. Tokeny zařízení: `docs/protocol.md`, oddíl „Zařízení“.
 
+## Jazyky
+Rozhraní appky je ve 45 jazycích (`app/lib/l10n/*.arb`, šablona `app_cs.arb`, `flutter gen-l10n`), název appky a text u mikrofonu v `InfoPlist.strings` (iOS) a `values-*/strings.xml` (Android). To jsou jazyky UI. Jazyky, které se překládají (`app/lib/ui/languages.dart`, 13 jazyků), určuje server a hlasy `tts`, ne tahle sada.
+
 ## Provoz na SPARKu
 
 ASR worker, LLM i TTS běží jen přes broker. `tts` je v profilech `llm` a `comfy`, v profilu `director` vrací `ai-audio` 503. Na testy:
