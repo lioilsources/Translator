@@ -41,9 +41,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   Future<void> _openLibrary() async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => VoiceLibraryScreen(settings: s),
-      ),
+      MaterialPageRoute<void>(builder: (_) => VoiceLibraryScreen(settings: s)),
     );
     await _loadVoices();
   }
@@ -174,9 +172,7 @@ class _SetupScreenState extends State<SetupScreen> {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _start,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-              ),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.all(20)),
               child: Text(l.start),
             ),
           ],
@@ -384,7 +380,9 @@ class _Utterance extends StatelessWidget {
     final mine = entry.side != Side.b;
     final time = TimeOfDay.fromDateTime(entry.at).format(context);
     return Align(
-      alignment: mine ? Alignment.centerLeft : Alignment.centerRight,
+      alignment: mine
+          ? AlignmentDirectional.centerStart
+          : AlignmentDirectional.centerEnd,
       child: FractionallySizedBox(
         widthFactor: 0.88,
         child: Card(
