@@ -499,6 +499,18 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Vlastní hlas je zatím jen pro testery se zvacím kódem'**
   String get voiceNeedsInvite;
+
+  /// No description provided for @statsToggle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Anonymní statistiky používání'**
+  String get statsToggle;
+
+  /// No description provided for @statsToggleHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pomáhají zjistit, kde appka nefunguje dobře. Nic z toho, co se řekne nebo přeloží, se neposílá.'**
+  String get statsToggleHelp;
 }
 
 class _AppLocalizationsDelegate
