@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Tlumočník</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f6f8f7;
+      color: #1d2b27;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 60px 24px;
+      line-height: 1.7;
+    }
+    h1 { font-size: 2rem; color: #2e7d6b; margin-bottom: 8px; }
+    .updated { color: #6b7b76; font-size: 0.9rem; margin-bottom: 40px; }
+    h2 { font-size: 1.1rem; color: #2e7d6b; margin: 32px 0 10px; }
+    p { margin-bottom: 12px; }
+    a { color: #2e7d6b; }
+    .todo { background: #fff3cd; border: 1px solid #e0c36a; padding: 12px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f1614; color: #dce7e3; }
+      h1, h2, a { color: #7fc8b5; }
+      .updated { color: #8a9a95; }
+      .todo { background: #3a3215; border-color: #8a7330; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: November 14, 2026</p>
+
+  <h2>Overview</h2>
+  <p>
+    This policy covers <em>Tlumočník</em> (Interpreter), an app by A+B that
+    lies on the table between two people, recognises who is speaking,
+    translates it and says it aloud to the other person. It is published as
+    <code>com.ol1n.tlumocnik</code> on iOS and Android. There is no account.
+    To translate, the app sends your speech to the developer's translation
+    server, as described below. Separately, it sends anonymous usage
+    statistics, which never contain anything that was said and which you
+    can turn off at any time.
+  </p>
+
+  <h2>Translation</h2>
+  <p>
+    <strong>What the app sends.</strong> During a conversation the app sends
+    the microphone audio of what is said (in automatic mode, the stretches
+    the app detects as speech; in push-to-talk mode, while you hold the
+    screen) to the developer's translation server, over an encrypted
+    connection for the servers built into the app, together with the two chosen languages, the conversation mode,
+    whether spoken output is on, which voices were chosen, and this phone's
+    device identifier. The server sends back the recognised text, its
+    translation and the translation as speech.
+  </p>
+  <p>
+    <strong>Device identifier.</strong> On first use the app registers this
+    phone with the translation server and receives a random device
+    identifier and an access token. They are used to let the phone in, to
+    count today's translation minutes and to keep the voices recorded on this
+    phone. If you enter an invite code, it is sent to the server to unlock
+    the tester level.
+  </p>
+  <p>
+    <strong>Your own voice.</strong> Only if you choose to record one, with
+    your explicit consent, a 30-second recording of your voice and the name
+    you give it are uploaded and stored on the translation server, so
+    translations can be spoken in your voice. This is biometric data. You may
+    record only yourself. Deleting the voice in the app permanently removes
+    the recording from the server and withdraws your consent.
+  </p>
+  <p>
+    <strong>Conversation history</strong> (what was said and its translation)
+    is saved only on your phone. It leaves the phone only if you share a
+    conversation yourself, through the system share sheet.
+  </p>
+  <!-- OLIN: complete before merging. Not decidable from the app's code:
+       where the translation servers run and who operates them (the backends
+       "L40S" and "SPARK", the Cloudflare tunnel in front of them), what the
+       server keeps and for how long (logs, daily minute counters, IP address
+       for the registration limit), and whether any third party processes the
+       audio. Then remove the box below. -->
+  <p class="todo">
+    [To be completed before publishing: where the translation server runs,
+    who processes the audio and text, and what is kept on the server and for
+    how long.]
+  </p>
+
+  <h2>Anonymous Usage Statistics</h2>
+  <p>
+    <strong>What is sent.</strong> Short records of how the app is used: the
+    app was opened or went to the background, which screen was shown and for
+    how many seconds, a conversation started and how it ended (for example
+    finished, left without a translation, no connection, the server was busy,
+    today's minutes were used up), the two language codes of that
+    conversation, how many seconds it lasted, how long the connection to the
+    translation server took, which features were used for the first time
+    (for example push-to-talk, pause, text only, history, sharing, your own
+    voice), and which kind of error was shown. Each record also carries the
+    app version, platform (iOS or Android), app language, which translation
+    server is in use (by name, not address), and two coarse bands: roughly how
+    many times the app has been used on this device (1, 2, 3–5, 6–10, 11+)
+    and roughly how many days ago (0, 1, 2–6, 7–29, 30+). The full list is
+    published in the app's source repository (<code>docs/telemetry.md</code>).
+  </p>
+  <p>
+    <strong>Never anything that was said.</strong> The statistics contain no
+    audio, no recognised or translated text, no voice names, no conversation
+    history and nothing you type. They are separate from translation: they
+    go to a different server and do not use the device identifier or the
+    access token described above.
+  </p>
+  <p>
+    <strong>Why.</strong> To see whether new users get to their first
+    translation, where people give up while waiting, which errors they hit
+    and which features are never used, so we can fix them.
+  </p>
+  <p>
+    <strong>No identifiers.</strong> The statistics contain no name, no
+    email, no account, no device or advertising identifier and no exact
+    device model. Each session gets a random number that exists only while
+    the app runs, so two sessions cannot be linked to each other or to you.
+    The statistics are not used for advertising or tracking and are not sold
+    or shared.
+  </p>
+  <p>
+    <strong>Who receives them, and where.</strong> The statistics are
+    received and stored by the developer, on the developer's own server in
+    the EU (Czech Republic). Nobody else receives them: no analytics company
+    or other third party is involved. Sending them, like any internet
+    connection, reveals your IP address to that server; the IP address is not
+    stored, it is used only to derive your country. Your country is the only
+    location information kept.
+  </p>
+  <p>
+    <strong>How long.</strong> Statistics are kept for 12 months and then
+    deleted.
+  </p>
+  <p>
+    <strong>Offline.</strong> Without a connection, up to 500 recent records
+    wait on your device and are sent later; older ones are discarded.
+  </p>
+  <p>
+    <strong>How to turn them off.</strong> Open Settings (the gear on the
+    main screen) and switch off <em>Anonymous usage statistics</em>
+    (<em>Anonymní statistiky používání</em> in Czech). This takes effect
+    immediately: records waiting on your device are deleted and nothing more
+    is sent, until you turn it back on.
+  </p>
+
+  <h2>Local Storage</h2>
+  <p>
+    Your choices (languages, mode, voices, server), the device identifier and
+    token, and the conversation history are stored on your phone using
+    standard platform storage. The statistics keep a few small values there
+    — the day measuring began, a session counter and the last day band —
+    from which the bands above are worked out on your device.
+  </p>
+
+  <h2>Permissions</h2>
+  <p>
+    <strong>Microphone</strong>: to hear and translate what is said, and to
+    record your own voice if you choose to. The app uses it only while a
+    conversation or a voice recording is running.
+  </p>
+
+  <h2>Data We Do Not Collect</h2>
+  <p>— Personal identifiers (name, email, phone number, account)</p>
+  <p>— Precise location (only the country, for the statistics)</p>
+  <p>— The advertising ID or the exact device model</p>
+  <p>— Contacts, photos, files or anything outside the app</p>
+
+  <h2>Third-Party Services</h2>
+  <p>
+    Tlumočník contains no advertising, analytics or tracking SDKs. The
+    anonymous statistics go only to the developer's own server, as described
+    above.
+  </p>
+
+  <h2>Children</h2>
+  <p>
+    Tlumočník is not directed at children and is not offered in the App Store
+    Kids category or Google Play's Families programme.
+  </p>
+
+  <h2>Changes to This Policy</h2>
+  <p>
+    If this policy changes, the updated version will be posted at this URL
+    with a revised date.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions? Contact us at
+    <a href="mailto:business@olin.now">business@olin.now</a>
+  </p>
+</body>
+</html>
