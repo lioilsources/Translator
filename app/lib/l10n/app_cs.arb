@@ -80,5 +80,7 @@
   "inviteWrong": "Tenhle kód neplatí",
   "inviteUnavailable": "Kód teď nejde ověřit, zkuste to později",
   "errorQuota": "Dnešní minuty překladu došly, zítra zase",
-  "voiceNeedsInvite": "Vlastní hlas je zatím jen pro testery se zvacím kódem"
+  "voiceNeedsInvite": "Vlastní hlas je zatím jen pro testery se zvacím kódem",
+  "statsToggle": "Anonymní statistiky používání",
+  "statsToggleHelp": "Pomáhají zjistit, kde appka nefunguje dobře. Nic z toho, co se řekne nebo přeloží, se neposílá."
 }

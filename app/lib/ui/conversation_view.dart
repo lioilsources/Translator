@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ol1n_telemetry/ol1n_telemetry.dart';
 import 'package:translator_app/l10n/app_localizations.dart';
 import 'package:translator_core/translator_core.dart';
 
@@ -68,7 +69,10 @@ class _Half extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onLongPress: controller.mode == Mode.ptt
             ? null
-            : () => controller.force(side),
+            : () {
+                Telemetry.feature('speaker_force');
+                controller.force(side);
+              },
         child: Row(
           children: [
             AnimatedContainer(
@@ -102,7 +106,10 @@ class _Half extends StatelessWidget {
                                 entry: entries[i],
                                 side: side,
                                 latest: i == 0,
-                                onItWasMe: () => controller.force(side),
+                                onItWasMe: () {
+                                  Telemetry.feature('speaker_force');
+                                  controller.force(side);
+                                },
                               ),
                             ),
                     ),
@@ -206,16 +213,20 @@ class _Controls extends StatelessWidget {
                   icon: Icon(
                     controller.paused ? Icons.play_arrow : Icons.pause,
                   ),
-                  onPressed: () =>
-                      controller.setPaused(paused: !controller.paused),
+                  onPressed: () {
+                    if (!controller.paused) Telemetry.feature('pause');
+                    controller.setPaused(paused: !controller.paused);
+                  },
                 ),
                 IconButton(
                   tooltip: controller.ttsEnabled ? l.soundOn : l.soundOff,
                   icon: Icon(
                     controller.ttsEnabled ? Icons.volume_up : Icons.subtitles,
                   ),
-                  onPressed: () =>
-                      controller.setTts(enabled: !controller.ttsEnabled),
+                  onPressed: () {
+                    if (controller.ttsEnabled) Telemetry.feature('tts_off');
+                    controller.setTts(enabled: !controller.ttsEnabled);
+                  },
                 ),
                 Expanded(
                   child: Text(

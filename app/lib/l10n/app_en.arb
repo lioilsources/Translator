@@ -66,5 +66,7 @@
   "inviteWrong": "This code is not valid",
   "inviteUnavailable": "The code cannot be checked now, try later",
   "errorQuota": "Today's translation minutes are used up, more tomorrow",
-  "voiceNeedsInvite": "Your own voice is for testers with an invite code for now"
+  "voiceNeedsInvite": "Your own voice is for testers with an invite code for now",
+  "statsToggle": "Anonymous usage statistics",
+  "statsToggleHelp": "Help find where the app falls short. Nothing that is said or translated is sent."
 }

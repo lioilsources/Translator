@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:ol1n_telemetry/ol1n_telemetry.dart';
 import 'package:translator_app/core/platform.dart';
 import 'package:translator_app/l10n/app_localizations.dart';
 
@@ -18,9 +19,14 @@ class VoiceLibraryScreen extends StatefulWidget {
 
 class _VoiceLibraryScreenState extends State<VoiceLibraryScreen> {
   late final _library = VoiceLibrary(widget.settings);
-  late Future<List<Voice>> _voices = _library.list();
+  late Future<List<Voice>> _voices = _list();
 
-  void _reload() => setState(() => _voices = _library.list());
+  void _reload() => setState(() => _voices = _list());
+
+  Future<List<Voice>> _list() => _library.list().catchError((Object e) {
+    Telemetry.errorShown('voice_server');
+    throw e;
+  });
 
   Future<void> _delete(Voice voice) async {
     final l = AppLocalizations.of(context);
@@ -50,6 +56,7 @@ class _VoiceLibraryScreenState extends State<VoiceLibraryScreen> {
   Future<void> _add() async {
     final added = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/voices/record'),
         builder: (_) => RecordVoiceScreen(library: _library),
       ),
     );
@@ -128,6 +135,7 @@ class _RecordVoiceScreenState extends State<RecordVoiceScreen> {
     final l = AppLocalizations.of(context);
     final mic = MicCapture();
     if (!await mic.hasPermission()) {
+      Telemetry.errorShown('mic_denied');
       setState(() => _error = l.micDenied);
       return;
     }
@@ -158,8 +166,11 @@ class _RecordVoiceScreenState extends State<RecordVoiceScreen> {
     await mic?.stop();
     try {
       await widget.library.create(_name.text.trim(), _pcm.takeBytes());
+      Telemetry.feature('voice_record');
       navigator.pop(true);
     } on VoiceForbidden {
+      // Recording a voice is locked for devices without an invite code.
+      Telemetry.lockedTap('voice_record');
       if (mounted) {
         setState(() {
           _uploading = false;
@@ -167,6 +178,7 @@ class _RecordVoiceScreenState extends State<RecordVoiceScreen> {
         });
       }
     } on Exception {
+      Telemetry.errorShown('voice_server');
       if (mounted) {
         setState(() {
           _uploading = false;

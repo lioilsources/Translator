@@ -47,6 +47,10 @@ dependencies:
   uuid: ^4.6.0
   translator_core:
     path: packages/translator_core
+  ol1n_telemetry:
+    git:
+      url: https://github.com/lioilsources/Ol1nTelemetry.git
+      ref: v0.1.0
 
 dev_dependencies:
   flutter_test:

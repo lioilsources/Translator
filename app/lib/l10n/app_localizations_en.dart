@@ -220,4 +220,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get voiceNeedsInvite =>
       'Your own voice is for testers with an invite code for now';
+
+  @override
+  String get statsToggle => 'Anonymous usage statistics';
+
+  @override
+  String get statsToggleHelp =>
+      'Help find where the app falls short. Nothing that is said or translated is sent.';
 }

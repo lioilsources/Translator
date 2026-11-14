@@ -106,7 +106,10 @@ jobs:
         working-directory: app
         env:
           TRANSLATOR_TOKEN: ${{ secrets.TRANSLATOR_TOKEN }}
-        run: flutter build ios --release --no-codesign --dart-define=TRANSLATOR_TOKEN=$TRANSLATOR_TOKEN
+          # Anonymous usage statistics (docs/telemetry.md); unset → silent build.
+          TELEMETRY_KEY: ${{ secrets.TELEMETRY_KEY }}
+          TELEMETRY_HOST: ${{ secrets.TELEMETRY_HOST }}
+        run: flutter build ios --release --no-codesign --dart-define=TRANSLATOR_TOKEN=$TRANSLATOR_TOKEN --dart-define=TELEMETRY_KEY="$TELEMETRY_KEY" --dart-define=TELEMETRY_HOST="$TELEMETRY_HOST"
 
       - name: Archive with manual signing
         env:

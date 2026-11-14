@@ -216,4 +216,11 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get voiceNeedsInvite =>
       'Vlastní hlas je zatím jen pro testery se zvacím kódem';
+
+  @override
+  String get statsToggle => 'Anonymní statistiky používání';
+
+  @override
+  String get statsToggleHelp =>
+      'Pomáhají zjistit, kde appka nefunguje dobře. Nic z toho, co se řekne nebo přeloží, se neposílá.';
 }

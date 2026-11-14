@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:ol1n_telemetry/ol1n_telemetry.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:translator_app/core/platform.dart';
 import 'package:translator_app/l10n/app_localizations.dart';
+import 'package:translator_app/telemetry/telemetry_dictionary.dart';
 import 'package:translator_app/ui/conversation_view.dart';
 import 'package:translator_app/ui/languages.dart';
 import 'package:translator_app/ui/voices.dart';
@@ -42,6 +44,7 @@ class _SetupScreenState extends State<SetupScreen> {
   Future<void> _openLibrary() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/voices'),
         builder: (_) => VoiceLibraryScreen(settings: s),
       ),
     );
@@ -85,7 +88,18 @@ class _SetupScreenState extends State<SetupScreen> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final l = AppLocalizations.of(context);
+    // The flow covers the whole wait, from the tap to the end of the
+    // conversation; only the pair of languages goes with it.
+    var step = 'setup';
+    final flow = Telemetry.flow('translate', {
+      'lang_a': telemetryLang(s.langA),
+      'lang_b': telemetryLang(s.langB),
+    }, () => {'step': step});
+    if (s.mode == Mode.ptt) Telemetry.feature('ptt');
+    if (s.mode == Mode.streaming) Telemetry.feature('streaming');
     if (!await mic.hasPermission()) {
+      Telemetry.errorShown('mic_denied');
+      flow.end('no_mic', {'step': 'setup'});
       messenger.showSnackBar(SnackBar(content: Text(l.micDenied)));
       return;
     }
@@ -93,9 +107,17 @@ class _SetupScreenState extends State<SetupScreen> {
     await DeviceAuth(s).ensure();
     await navigator.push(
       MaterialPageRoute<void>(
-        builder: (_) => LiveConversationScreen(settings: s, mic: mic),
+        settings: const RouteSettings(name: '/conversation'),
+        builder: (_) => LiveConversationScreen(
+          settings: s,
+          mic: mic,
+          flow: flow,
+          onStep: (v) => step = v,
+        ),
       ),
     );
+    // Whatever way the screen went, the flow has an end.
+    flow.end('cancel', {'step': 'setup'});
   }
 
   @override
@@ -108,9 +130,15 @@ class _SetupScreenState extends State<SetupScreen> {
           IconButton(
             tooltip: l.history,
             icon: const Icon(Icons.history),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const HistoryScreen()),
-            ),
+            onPressed: () {
+              Telemetry.feature('history');
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  settings: const RouteSettings(name: '/history'),
+                  builder: (_) => const HistoryScreen(),
+                ),
+              );
+            },
           ),
           IconButton(
             tooltip: l.voiceLibrary,
@@ -122,6 +150,7 @@ class _SetupScreenState extends State<SetupScreen> {
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
+                settings: const RouteSettings(name: '/settings'),
                 builder: (_) => SettingsScreen(settings: s),
               ),
             ),
@@ -174,9 +203,7 @@ class _SetupScreenState extends State<SetupScreen> {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _start,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-              ),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.all(20)),
               child: Text(l.start),
             ),
           ],
@@ -213,11 +240,20 @@ class LiveConversationScreen extends StatefulWidget {
   const LiveConversationScreen({
     required this.settings,
     required this.mic,
+    this.flow,
+    this.onStep,
     super.key,
   });
 
   final Settings settings;
   final MicCapture mic;
+
+  /// The `translate` flow this conversation ends.
+  final TelemetryFlow? flow;
+
+  /// Tells the flow where the conversation stands, for an end written while
+  /// the app is in the background.
+  final void Function(String step)? onStep;
 
   @override
   State<LiveConversationScreen> createState() => _LiveConversationScreenState();
@@ -226,6 +262,10 @@ class LiveConversationScreen extends StatefulWidget {
 class _LiveConversationScreenState extends State<LiveConversationScreen> {
   late final ConversationController _c;
   final _store = FileTranscriptStore();
+  final _opened = DateTime.now();
+  var _ready = false;
+  var _translated = false;
+  String? _shownError;
 
   @override
   void initState() {
@@ -243,9 +283,11 @@ class _LiveConversationScreenState extends State<LiveConversationScreen> {
       state: ConversationState(transcript),
       mode: s.mode,
       onChanged: () {
+        _observe();
         if (mounted) setState(() {});
       },
     );
+    if (s.voiceA != null || s.voiceB != null) Telemetry.feature('clone_voice');
     _c.start(
       deviceId: s.deviceId,
       langA: s.langA,
@@ -257,8 +299,38 @@ class _LiveConversationScreenState extends State<LiveConversationScreen> {
     unawaited(widget.mic.start(_c.onMicFrame));
   }
 
+  /// Statistics read only phases, error codes and whether any translation
+  /// arrived; never the text.
+  void _observe() {
+    final state = _c.state;
+    widget.onStep?.call(state.phase.name);
+    if (!_ready && state.phase != Phase.connecting) {
+      _ready = true;
+      Telemetry.track('translate_ready', {
+        'ms': DateTime.now()
+            .difference(_opened)
+            .inMilliseconds
+            .clamp(0, 600000),
+      });
+    }
+    if (!_translated &&
+        state.transcript.entries.any((e) => e.translation.isNotEmpty)) {
+      _translated = true;
+      Telemetry.activation();
+    }
+    final error = state.lastError;
+    if (error != null && error != _shownError) {
+      _shownError = error;
+      Telemetry.errorShown(telemetryErrorKind(error));
+    }
+  }
+
   Future<void> _end() async {
     final navigator = Navigator.of(context);
+    widget.flow?.end(
+      translateResult(translated: _translated, lastError: _c.state.lastError),
+      {'step': _c.state.phase.name},
+    );
     await widget.mic.stop();
     await _c.close();
     await WakelockPlus.disable();
@@ -318,6 +390,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
+                      settings: const RouteSettings(name: '/transcript'),
                       builder: (_) => TranscriptScreen(transcript: t),
                     ),
                   ),
@@ -357,9 +430,12 @@ class TranscriptScreen extends StatelessWidget {
           IconButton(
             tooltip: l.share,
             icon: const Icon(Icons.ios_share),
-            onPressed: () => unawaited(
-              SharePlus.instance.share(ShareParams(text: t.exportText())),
-            ),
+            onPressed: () {
+              Telemetry.feature('transcript_share');
+              unawaited(
+                SharePlus.instance.share(ShareParams(text: t.exportText())),
+              );
+            },
           ),
         ],
       ),
@@ -453,7 +529,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _save() async {
     final l = AppLocalizations.of(context);
     final navigator = Navigator.of(context);
-    widget.settings.useServer(_url.text.trim());
+    final url = _url.text.trim();
+    if (url != widget.settings.url) Telemetry.feature('server_switch');
+    widget.settings.useServer(url);
     final code = _invite.text.trim();
     if (code.isNotEmpty) {
       setState(() {
@@ -462,10 +540,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
       try {
         await DeviceAuth(widget.settings).redeem(code);
+        Telemetry.feature('invite');
       } on InviteRejected {
+        Telemetry.errorShown('invite_wrong');
         setState(() => _inviteError = l.inviteWrong);
         return;
       } on Exception {
+        Telemetry.errorShown('invite_unavailable');
         setState(() => _inviteError = l.inviteUnavailable);
         return;
       } finally {
@@ -558,6 +639,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   helperText: l.inviteHelp,
                   errorText: _inviteError,
                 ),
+              ),
+            // Only a build with a statistics key has something to switch.
+            if (Telemetry.isConfigured)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l.statsToggle),
+                subtitle: Text(l.statsToggleHelp),
+                value: Telemetry.isEnabled,
+                onChanged: (on) async {
+                  await Telemetry.setEnabled(on);
+                  if (mounted) setState(() {});
+                },
               ),
             const SizedBox(height: 16),
             FilledButton(
