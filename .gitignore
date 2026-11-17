@@ -11,3 +11,15 @@ build/
 .flutter-plugins-dependencies
 .DS_Store
 .cloudflared/
+# devconv:start
+.env.*
+!.env.example
+*.p8
+*.p12
+*.jks
+key.properties
+.claude/settings.local.json
+CLAUDE.local.md
+lib/**/secrets.dart
+*.pyc
+# devconv:end
